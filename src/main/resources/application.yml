@@ -1,0 +1,98 @@
+server:
+  port: ${PORT:8081}
+  servlet:
+    context-path: /whatsapp-ai-response-service/v1
+
+spring:
+  application:
+    name: whatsapp-ai-response-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:beautybot;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  flyway:
+    enabled: ${SPRING_FLYWAY_ENABLED:true}
+    locations: classpath:db/migration
+  jpa:
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}
+    open-in-view: false
+    properties:
+      hibernate:
+        globally_quoted_identifiers: true
+        globally_quoted_identifiers_skip_column_definitions: true
+        jdbc:
+          time_zone: UTC
+
+beauty-bot:
+  clinic-name: ${BEAUTY_BOT_CLINIC_NAME:Doctor Beauty}
+  location: ${BEAUTY_BOT_LOCATION:Cochabamba 427}
+  opening-hours: ${BEAUTY_BOT_OPENING_HOURS:Lunes a viernes de 9 a 18 hs}
+  advisor-notification-enabled: ${BEAUTY_BOT_ADVISOR_NOTIFICATION_ENABLED:true}
+  test-endpoints-enabled: ${BEAUTY_BOT_TEST_ENDPOINTS_ENABLED:false}
+  bot-capabilities:
+    can-collect-lead-data: true
+    can-notify-human: true
+    can-confirm-appointment: false
+    can-check-availability: ${BEAUTY_BOT_CAN_CHECK_AVAILABILITY:true}
+    can-give-exact-prices: false
+    can-provide-medical-advice: false
+    can-cancel-appointments: false
+    can-reschedule-appointments: false
+  calendar:
+    enabled: ${BEAUTY_BOT_CALENDAR_ENABLED:true}
+    time-zone: ${BEAUTY_BOT_CALENDAR_TIME_ZONE:America/Argentina/Buenos_Aires}
+    lookahead-days: ${BEAUTY_BOT_CALENDAR_LOOKAHEAD_DAYS:14}
+    slot-duration-minutes: ${BEAUTY_BOT_CALENDAR_SLOT_DURATION_MINUTES:30}
+    minimum-notice-minutes: ${BEAUTY_BOT_CALENDAR_MINIMUM_NOTICE_MINUTES:120}
+    max-suggestions: ${BEAUTY_BOT_CALENDAR_MAX_SUGGESTIONS:3}
+    working-hours:
+      start: ${BEAUTY_BOT_CALENDAR_WORKING_START:09:00}
+      end: ${BEAUTY_BOT_CALENDAR_WORKING_END:18:00}
+      days: ${BEAUTY_BOT_CALENDAR_WORKING_DAYS:MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY}
+    google:
+      calendar-id: ${GOOGLE_CALENDAR_ID:}
+      service-account-json-base64: ${GOOGLE_SERVICE_ACCOUNT_JSON_BASE64:}
+      service-account-json: ${GOOGLE_SERVICE_ACCOUNT_JSON:}
+  ai:
+    enabled: ${BEAUTY_BOT_AI_ENABLED:true}
+    base-url: ${BEAUTY_BOT_AI_BASE_URL:https://api.openai.com/v1}
+    api-key: ${OPENAI_API_KEY:}
+    model: ${BEAUTY_BOT_AI_MODEL:gpt-5.4-mini}
+    timeout-seconds: ${BEAUTY_BOT_AI_TIMEOUT_SECONDS:20}
+    prompt-cache-retention: ${BEAUTY_BOT_AI_PROMPT_CACHE_RETENTION:24h}
+    decision:
+      enabled: ${BEAUTY_BOT_AI_DECISION_ENABLED:true}
+      fallback-enabled: ${BEAUTY_BOT_AI_DECISION_FALLBACK_ENABLED:true}
+    decision-prompt:
+      id: ${BEAUTY_BOT_AI_DECISION_PROMPT_ID:pmpt_6a02f47c00c8819680b96adab9567fc609c9ad968e62966b}
+      version: ${BEAUTY_BOT_AI_DECISION_PROMPT_VERSION:}
+  conversation:
+    collecting-reuse-hours: ${BEAUTY_BOT_CONVERSATION_COLLECTING_REUSE_HOURS:24}
+    ready-for-human-reuse-hours: ${BEAUTY_BOT_CONVERSATION_READY_FOR_HUMAN_REUSE_HOURS:168}
+    human-handoff-reuse-hours: ${BEAUTY_BOT_CONVERSATION_HUMAN_HANDOFF_REUSE_HOURS:168}
+  security:
+    internal-api-key-enabled: ${BEAUTY_BOT_INTERNAL_API_KEY_ENABLED:false}
+    internal-api-key-header: ${BEAUTY_BOT_INTERNAL_API_KEY_HEADER:Authorization}
+    internal-api-key: ${BEAUTY_BOT_INTERNAL_API_KEY:}
+  observability:
+    mask-phone-numbers: ${BEAUTY_BOT_MASK_PHONE_NUMBERS:true}
+  whatsapp:
+    enabled: ${WHATSAPP_ENABLED:true}
+    verify-token: ${WHATSAPP_VERIFY_TOKEN:}
+    access-token: ${WHATSAPP_ACCESS_TOKEN:}
+    app-secret: ${WHATSAPP_APP_SECRET:}
+    phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+    base-url: ${WHATSAPP_BASE_URL:https://graph.facebook.com/v25.0}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}

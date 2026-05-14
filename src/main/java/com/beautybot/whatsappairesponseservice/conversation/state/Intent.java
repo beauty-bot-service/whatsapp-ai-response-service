@@ -1,0 +1,22 @@
+package com.beautybot.whatsappairesponseservice.conversation.state;
+
+public enum Intent {
+    GREETING,
+    APPOINTMENT_REQUEST,
+    TREATMENT_INFO,
+    PRICE_QUESTION,
+    LOCATION_QUESTION,
+    OPENING_HOURS_QUESTION,
+    AVAILABILITY_QUESTION,
+    RESCHEDULE,
+    CANCEL,
+    MEDICAL_QUESTION,
+    HUMAN_REQUEST,
+    COMPLAINT,
+    ANSWER_NAME,
+    ANSWER_FIRST_TIME,
+    ANSWER_PREFERRED_TIME,
+    ANSWER_TREATMENT,
+    THANKS,
+    UNKNOWN
+}

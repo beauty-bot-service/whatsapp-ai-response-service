@@ -19,6 +19,67 @@ Objetivo del MVP:
 - Dockerfile multi-stage
 - MapStruct para mapeos entre capas
 
+## Dependencia `beauty-bot-common` desde GitHub Packages
+
+Este servicio consume:
+
+```xml
+<dependency>
+  <groupId>com.beautybot</groupId>
+  <artifactId>beauty-bot-common</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+</dependency>
+```
+
+En `pom.xml` tambien esta configurado el repositorio Maven de GitHub Packages:
+
+```xml
+<repositories>
+  <repository>
+    <id>github</id>
+    <name>GitHub Packages</name>
+    <url>https://maven.pkg.github.com/TU_USUARIO/TU_REPO</url>
+    <releases>
+      <enabled>true</enabled>
+    </releases>
+    <snapshots>
+      <enabled>true</enabled>
+    </snapshots>
+  </repository>
+</repositories>
+```
+
+### Configuracion local (`~/.m2/settings.xml`)
+
+```xml
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <servers>
+    <server>
+      <id>github</id>
+      <username>TU_USUARIO_GITHUB</username>
+      <password>${env.GITHUB_TOKEN}</password>
+    </server>
+  </servers>
+</settings>
+```
+
+Scopes del token: `read:packages`, `write:packages` y `repo` si el repositorio es privado.
+
+## Build en Railway con Dockerfile (GitHub Packages privado)
+
+Si el package es privado, el build necesita credenciales en tiempo de build.
+
+1. Crear variables en Railway:
+   - `GITHUB_USERNAME`
+   - `GITHUB_TOKEN`
+2. Pasarlas como build args para Docker:
+   - `GITHUB_USERNAME=${{GITHUB_USERNAME}}`
+   - `GITHUB_TOKEN=${{GITHUB_TOKEN}}`
+
+El `Dockerfile` ya fue adaptado para usar esas variables y generar `/root/.m2/settings.xml` durante el build.
+
 ## Documentacion de configuracion
 
 - Guia completa paso a paso: [docs/CONFIGURACION_COMPLETA.md](docs/CONFIGURACION_COMPLETA.md)

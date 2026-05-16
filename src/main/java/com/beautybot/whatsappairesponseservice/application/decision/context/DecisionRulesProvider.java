@@ -15,10 +15,10 @@ public class DecisionRulesProvider {
 
     public Map<ConversationState, String> allowedStates() {
         Map<ConversationState, String> states = new LinkedHashMap<>();
-        states.put(ConversationState.COLLECTING_DATA, "El bot esta recolectando datos minimos del cliente antes de pasar la conversacion a una asesora.");
-        states.put(ConversationState.READY_FOR_HUMAN, "Ya hay datos suficientes para que una asesora continue. El bot puede enviar un mensaje breve de cierre y luego debe dejar de responder.");
-        states.put(ConversationState.HUMAN_HANDOFF, "El usuario pidio una persona, hizo una queja, realizo una consulta medica delicada, quiere cancelar/reprogramar, o el caso requiere intervencion humana. El bot puede enviar un mensaje breve de derivacion y luego debe dejar de responder.");
-        states.put(ConversationState.CLOSED, "Conversacion cerrada. No debe continuar el flujo.");
+        states.put(ConversationState.COLLECTING_DATA, "The bot is collecting the minimum customer data before handing the conversation to an advisor.");
+        states.put(ConversationState.READY_FOR_HUMAN, "There is enough data for an advisor to continue. The bot may send a short closing message and then should stop replying.");
+        states.put(ConversationState.HUMAN_HANDOFF, "The customer requested a human, complained, asked a delicate medical question, or asked to cancel/reschedule. The bot may send a short handoff message and then should stop replying.");
+        states.put(ConversationState.CLOSED, "Conversation closed. The flow must not continue.");
         return states;
     }
 

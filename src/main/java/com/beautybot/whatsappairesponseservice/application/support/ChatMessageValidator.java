@@ -1,6 +1,7 @@
 package com.beautybot.whatsappairesponseservice.application.support;
 
 import com.beautybot.whatsappairesponseservice.application.exception.InvalidChatMessageException;
+import com.beautybot.whatsappairesponseservice.application.exception.ResponseCode;
 import com.beautybot.whatsappairesponseservice.conversation.model.ChatMessage;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +16,7 @@ public class ChatMessageValidator {
 
     public void validateNormalized(ChatMessage message) {
         if (message == null) {
-            throw new InvalidChatMessageException("mensaje invalido");
+            throw new InvalidChatMessageException(ResponseCode.INVALID_CHAT_MESSAGE);
         }
         validatePhoneNumber(message.getPhoneNumber());
         validateMessage(message.getMessage());
@@ -25,34 +26,34 @@ public class ChatMessageValidator {
 
     private void validatePhoneNumber(String phoneNumber) {
         if (isBlank(phoneNumber)) {
-            throw new InvalidChatMessageException("phoneNumber invalido");
+            throw new InvalidChatMessageException(ResponseCode.INVALID_PHONE_NUMBER);
         }
         if (!phoneNumber.matches("\\d+")) {
-            throw new InvalidChatMessageException("phoneNumber debe contener solo digitos luego de normalizar");
+            throw new InvalidChatMessageException(ResponseCode.PHONE_NUMBER_MUST_BE_NUMERIC);
         }
         if (phoneNumber.length() < MIN_PHONE_DIGITS || phoneNumber.length() > MAX_PHONE_DIGITS) {
-            throw new InvalidChatMessageException("phoneNumber debe tener entre " + MIN_PHONE_DIGITS + " y " + MAX_PHONE_DIGITS + " digitos");
+            throw new InvalidChatMessageException(ResponseCode.PHONE_NUMBER_LENGTH_OUT_OF_RANGE, MIN_PHONE_DIGITS, MAX_PHONE_DIGITS);
         }
     }
 
     private void validateMessage(String text) {
         if (isBlank(text)) {
-            throw new InvalidChatMessageException("message invalido");
+            throw new InvalidChatMessageException(ResponseCode.INVALID_MESSAGE_TEXT);
         }
         if (text.length() > MAX_MESSAGE_LENGTH) {
-            throw new InvalidChatMessageException("message supera el maximo de " + MAX_MESSAGE_LENGTH + " caracteres");
+            throw new InvalidChatMessageException(ResponseCode.MESSAGE_LENGTH_EXCEEDED, MAX_MESSAGE_LENGTH);
         }
     }
 
     private void validateLength(String fieldName, String value, int maxLength, boolean nullable) {
         if (value == null) {
             if (!nullable) {
-                throw new InvalidChatMessageException(fieldName + " invalido");
+                throw new InvalidChatMessageException(ResponseCode.INVALID_FIELD_VALUE, fieldName);
             }
             return;
         }
         if (value.length() > maxLength) {
-            throw new InvalidChatMessageException(fieldName + " supera el maximo de " + maxLength + " caracteres");
+            throw new InvalidChatMessageException(ResponseCode.FIELD_LENGTH_EXCEEDED, fieldName, maxLength);
         }
     }
 

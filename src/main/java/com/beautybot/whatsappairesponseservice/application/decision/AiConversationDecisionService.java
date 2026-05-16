@@ -1,6 +1,8 @@
 package com.beautybot.whatsappairesponseservice.application.decision;
 
 import com.beautybot.whatsappairesponseservice.ai.openai.OpenAiResponseParser;
+import com.beautybot.whatsappairesponseservice.application.exception.AppException;
+import com.beautybot.whatsappairesponseservice.application.exception.ResponseCode;
 import com.beautybot.whatsappairesponseservice.config.BeautyBotProperties;
 import com.beautybot.whatsappairesponseservice.config.RestClientFactory;
 import com.beautybot.whatsappairesponseservice.external.ExternalCallResultClassifier;
@@ -36,7 +38,7 @@ public class AiConversationDecisionService implements ConversationDecisionServic
     public ConversationDecision decide(ConversationContext context) {
         BeautyBotProperties.Ai ai = properties.getAi();
         if (!ai.isEnabled() || ai.getApiKey() == null || ai.getApiKey().isBlank()) {
-            throw new IllegalStateException("AI decision is enabled but OPENAI_API_KEY is missing or AI is disabled");
+            throw new AppException(ResponseCode.AI_DECISION_CONFIGURATION_ERROR);
         }
 
         try {
@@ -62,7 +64,7 @@ public class AiConversationDecisionService implements ConversationDecisionServic
             metrics.aiDecision(result);
             metrics.externalCall("openai", result);
             log.warn("AI conversation decision call failed. result={}, cause={}", result, e.getMessage());
-            throw new IllegalStateException("AI conversation decision failed: " + result, e);
+            throw new AppException(ResponseCode.AI_DECISION_REQUEST_FAILED, e, result);
         }
     }
 

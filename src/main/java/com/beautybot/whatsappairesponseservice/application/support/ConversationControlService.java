@@ -1,5 +1,7 @@
 package com.beautybot.whatsappairesponseservice.application.support;
 
+import com.beautybot.whatsappairesponseservice.application.exception.AppException;
+import com.beautybot.whatsappairesponseservice.application.exception.ResponseCode;
 import com.beautybot.whatsappairesponseservice.conversation.lock.ConversationDatabaseLockService;
 import com.beautybot.whatsappairesponseservice.conversation.lock.ConversationProcessingLockService;
 import com.beautybot.whatsappairesponseservice.conversation.model.ConversationSession;
@@ -47,11 +49,11 @@ public class ConversationControlService {
 
     private String normalizePhone(String value) {
         if (value == null) {
-            throw new IllegalArgumentException("phoneNumber is required");
+            throw new AppException(ResponseCode.CONVERSATION_PHONE_REQUIRED);
         }
         String normalized = value.trim().replace(" ", "");
         if (normalized.isEmpty()) {
-            throw new IllegalArgumentException("phoneNumber is required");
+            throw new AppException(ResponseCode.CONVERSATION_PHONE_REQUIRED);
         }
         return normalized;
     }

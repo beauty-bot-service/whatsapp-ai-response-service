@@ -22,7 +22,7 @@ public class ConversationDecisionValidator {
 
     public ConversationDecision validateAndFix(ConversationDecision decision, ConversationContext context) {
         if (decision == null) {
-            decision = fallbackCollectingDecision(context, "Decision nula devuelta por el motor conversacional.");
+            decision = fallbackCollectingDecision(context, "Conversation engine returned a null decision.");
         }
 
         if (decision.getExtractedData() == null) {
@@ -51,7 +51,7 @@ public class ConversationDecisionValidator {
             decision.setShouldNotifyHuman(false);
             decision.setShouldBotReply(true);
             decision.setReply(fallbackQuestionFor(missing, context.getCurrentSession()));
-            decision.setDecisionReason(appendReason(decision.getDecisionReason(), "Backend impidio READY_FOR_HUMAN porque faltan datos minimos."));
+            decision.setDecisionReason(appendReason(decision.getDecisionReason(), "Backend blocked READY_FOR_HUMAN because required lead data is missing."));
         }
 
         if (decision.getNextState() == ConversationState.READY_FOR_HUMAN) {

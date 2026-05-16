@@ -1,5 +1,7 @@
 package com.beautybot.whatsappairesponseservice.lead.service.impl;
 
+import com.beautybot.whatsappairesponseservice.application.exception.AppException;
+import com.beautybot.whatsappairesponseservice.application.exception.ResponseCode;
 import com.beautybot.whatsappairesponseservice.lead.dto.LeadResponse;
 import com.beautybot.whatsappairesponseservice.lead.dto.LeadUpsertRequest;
 import com.beautybot.whatsappairesponseservice.lead.entity.LeadEntity;
@@ -70,16 +72,16 @@ public class LeadServiceImpl implements LeadService {
         LeadEntity saved = leadRepository.save(lead);
 
         if (created) {
-            saveEvent(saved, LeadEventType.CREATED, null, saved.getStatus(), "Lead creado desde flujo conversacional", "system");
+            saveEvent(saved, LeadEventType.CREATED, null, saved.getStatus(), "Lead created from conversational flow.", "system");
         } else if (hasRelevantDataChange(request)) {
-            saveEvent(saved, LeadEventType.UPDATED, previousStatus, saved.getStatus(), "Lead actualizado desde flujo conversacional", "system");
+            saveEvent(saved, LeadEventType.UPDATED, previousStatus, saved.getStatus(), "Lead updated from conversational flow.", "system");
         }
 
         if (!Objects.equals(previousStatus, saved.getStatus())) {
-            saveEvent(saved, LeadEventType.STATUS_CHANGED, previousStatus, saved.getStatus(), "Cambio de estado por flujo conversacional", "system");
+            saveEvent(saved, LeadEventType.STATUS_CHANGED, previousStatus, saved.getStatus(), "Lead status changed by conversational flow.", "system");
         }
         if (!Objects.equals(previousTemperature, saved.getTemperature())) {
-            saveEvent(saved, LeadEventType.TEMPERATURE_CHANGED, null, null, "Cambio de temperatura a " + saved.getTemperature(), "system");
+            saveEvent(saved, LeadEventType.TEMPERATURE_CHANGED, null, null, "Lead temperature changed to " + saved.getTemperature(), "system");
         }
 
         return leadMapper.toResponse(saved);
@@ -90,7 +92,7 @@ public class LeadServiceImpl implements LeadService {
     public LeadResponse getById(Long clinicId, Long leadId) {
         validateClinicId(clinicId);
         LeadEntity lead = leadRepository.findByClinicIdAndId(clinicId, leadId)
-                .orElseThrow(() -> new IllegalArgumentException("Lead not found"));
+                .orElseThrow(() -> new AppException(ResponseCode.LEAD_NOT_FOUND));
         return leadMapper.toResponse(lead);
     }
 
@@ -100,7 +102,7 @@ public class LeadServiceImpl implements LeadService {
         validateClinicId(clinicId);
         String normalized = normalizePhoneNumber(phoneNumber);
         LeadEntity lead = leadRepository.findByClinicIdAndPhoneNumber(clinicId, normalized)
-                .orElseThrow(() -> new IllegalArgumentException("Lead not found"));
+                .orElseThrow(() -> new AppException(ResponseCode.LEAD_NOT_FOUND));
         return leadMapper.toResponse(lead);
     }
 
@@ -131,11 +133,11 @@ public class LeadServiceImpl implements LeadService {
     public LeadResponse changeStatus(Long clinicId, Long leadId, LeadStatus newStatus, String changedBy) {
         validateClinicId(clinicId);
         if (newStatus == null) {
-            throw new IllegalArgumentException("newStatus is required");
+            throw new AppException(ResponseCode.LEAD_STATUS_REQUIRED);
         }
 
         LeadEntity lead = leadRepository.findByClinicIdAndId(clinicId, leadId)
-                .orElseThrow(() -> new IllegalArgumentException("Lead not found"));
+                .orElseThrow(() -> new AppException(ResponseCode.LEAD_NOT_FOUND));
         LeadStatus previousStatus = lead.getStatus();
         LeadTemperature previousTemperature = lead.getTemperature();
 
@@ -147,10 +149,10 @@ public class LeadServiceImpl implements LeadService {
         LeadEntity saved = leadRepository.save(lead);
 
         if (!Objects.equals(previousStatus, saved.getStatus())) {
-            saveEvent(saved, LeadEventType.STATUS_CHANGED, previousStatus, saved.getStatus(), "Cambio manual de estado", changedBy);
+            saveEvent(saved, LeadEventType.STATUS_CHANGED, previousStatus, saved.getStatus(), "Manual status change.", changedBy);
         }
         if (!Objects.equals(previousTemperature, saved.getTemperature())) {
-            saveEvent(saved, LeadEventType.TEMPERATURE_CHANGED, null, null, "Cambio de temperatura a " + saved.getTemperature(), changedBy);
+            saveEvent(saved, LeadEventType.TEMPERATURE_CHANGED, null, null, "Lead temperature changed to " + saved.getTemperature(), changedBy);
         }
         return leadMapper.toResponse(saved);
     }
@@ -159,10 +161,10 @@ public class LeadServiceImpl implements LeadService {
     public LeadResponse assign(Long clinicId, Long leadId, Long assignedToUserId, String assignedBy) {
         validateClinicId(clinicId);
         LeadEntity lead = leadRepository.findByClinicIdAndId(clinicId, leadId)
-                .orElseThrow(() -> new IllegalArgumentException("Lead not found"));
+                .orElseThrow(() -> new AppException(ResponseCode.LEAD_NOT_FOUND));
         lead.setAssignedToUserId(assignedToUserId);
         LeadEntity saved = leadRepository.save(lead);
-        saveEvent(saved, LeadEventType.ASSIGNED, null, null, "Asignado a usuario " + assignedToUserId, assignedBy);
+        saveEvent(saved, LeadEventType.ASSIGNED, null, null, "Assigned to user " + assignedToUserId, assignedBy);
         return leadMapper.toResponse(saved);
     }
 
@@ -170,10 +172,10 @@ public class LeadServiceImpl implements LeadService {
     public LeadResponse addNote(Long clinicId, Long leadId, String note, String createdBy) {
         validateClinicId(clinicId);
         if (!hasText(note)) {
-            throw new IllegalArgumentException("note is required");
+            throw new AppException(ResponseCode.LEAD_NOTE_REQUIRED);
         }
         LeadEntity lead = leadRepository.findByClinicIdAndId(clinicId, leadId)
-                .orElseThrow(() -> new IllegalArgumentException("Lead not found"));
+                .orElseThrow(() -> new AppException(ResponseCode.LEAD_NOT_FOUND));
         String newNote = note.trim();
         if (hasText(lead.getNotes())) {
             lead.setNotes(lead.getNotes() + System.lineSeparator() + newNote);
@@ -181,23 +183,23 @@ public class LeadServiceImpl implements LeadService {
             lead.setNotes(newNote);
         }
         LeadEntity saved = leadRepository.save(lead);
-        saveEvent(saved, LeadEventType.NOTE_ADDED, null, null, "Nota agregada", createdBy);
+        saveEvent(saved, LeadEventType.NOTE_ADDED, null, null, "Note added.", createdBy);
         return leadMapper.toResponse(saved);
     }
 
     private void validateUpsertRequest(LeadUpsertRequest request) {
         if (request == null) {
-            throw new IllegalArgumentException("request is required");
+            throw new AppException(ResponseCode.LEAD_REQUEST_REQUIRED);
         }
         validateClinicId(request.getClinicId());
         if (!hasText(request.getPhoneNumber())) {
-            throw new IllegalArgumentException("phoneNumber is required");
+            throw new AppException(ResponseCode.LEAD_PHONE_REQUIRED);
         }
     }
 
     private void validateClinicId(Long clinicId) {
         if (clinicId == null) {
-            throw new IllegalArgumentException("clinicId is required");
+            throw new AppException(ResponseCode.LEAD_CLINIC_ID_REQUIRED);
         }
     }
 

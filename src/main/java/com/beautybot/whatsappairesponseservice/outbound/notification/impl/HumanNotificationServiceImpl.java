@@ -20,8 +20,8 @@ public class HumanNotificationServiceImpl implements HumanNotificationService {
             return;
         }
 
-        // MVP: por ahora solo log. Despues esto puede ser WhatsApp interno, email, Slack, CRM, etc.
-        log.info("Nuevo lead para asesora. phone={}, name={}, treatment={}, preferredTime={}, summary={}",
+        // MVP: log-only notification. This can be replaced with internal WhatsApp, email, Slack, CRM, etc.
+        log.info("New lead for advisor. phone={}, name={}, treatment={}, preferredTime={}, summary={}",
                 session.getPhoneNumber(),
                 session.getCustomerName(),
                 session.getTreatmentInterest(),
@@ -35,11 +35,10 @@ public class HumanNotificationServiceImpl implements HumanNotificationService {
             return;
         }
 
-        log.info("Nuevo mensaje de cliente en conversacion derivada. phone={}, state={}, message={}",
+        log.info("New customer message in human-handoff conversation. phone={}, state={}, message={}",
                 session.getPhoneNumber(),
                 session.getState(),
                 customerMessage);
     }
 }
-
 

@@ -34,7 +34,7 @@ public class ConversationMessageServiceImpl implements ConversationMessageServic
             return true;
         } catch (DataIntegrityViolationException ex) {
             if (!isBlank(normalizedChannel) && !isBlank(normalizedExternalMessageId)) {
-                log.info("Inbound duplicado detectado por constraint unica. channel={}, externalMessageId={}",
+                log.info("Duplicate inbound detected by unique constraint. channel={}, externalMessageId={}",
                         normalizedChannel, normalizedExternalMessageId);
                 return false;
             }
@@ -107,4 +107,3 @@ public class ConversationMessageServiceImpl implements ConversationMessageServic
         return value.trim();
     }
 }
-

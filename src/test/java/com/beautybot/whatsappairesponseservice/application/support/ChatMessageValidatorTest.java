@@ -1,9 +1,11 @@
 package com.beautybot.whatsappairesponseservice.application.support;
 
 import com.beautybot.whatsappairesponseservice.application.exception.InvalidChatMessageException;
+import com.beautybot.whatsappairesponseservice.application.exception.ResponseCode;
 import com.beautybot.whatsappairesponseservice.conversation.model.ChatMessage;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -21,8 +23,8 @@ class ChatMessageValidatorTest {
                 .build();
 
         assertThatThrownBy(() -> validator.validateNormalized(normalized))
-                .isInstanceOf(InvalidChatMessageException.class)
-                .hasMessage("phoneNumber invalido");
+                .isInstanceOfSatisfying(InvalidChatMessageException.class, ex ->
+                        assertThat(ex.getResponseCode()).isEqualTo(ResponseCode.INVALID_PHONE_NUMBER));
     }
 
     @Test

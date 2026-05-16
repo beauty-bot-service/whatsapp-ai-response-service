@@ -1,5 +1,7 @@
 package com.beautybot.whatsappairesponseservice.outbound.service.impl;
 
+import com.beautybot.whatsappairesponseservice.application.exception.AppException;
+import com.beautybot.whatsappairesponseservice.application.exception.ResponseCode;
 import com.beautybot.whatsappairesponseservice.conversation.model.ConversationSession;
 import com.beautybot.whatsappairesponseservice.observability.BeautyBotMetrics;
 import com.beautybot.whatsappairesponseservice.observability.PhoneNumberMasker;
@@ -31,8 +33,8 @@ public class OutboundMessageServiceImpl implements OutboundMessageService {
     @Override
     public OutboundMessage sendBotReply(ConversationSession session, String content) {
         validateSession(session);
-        String normalizedPhoneNumber = requireText(session.getPhoneNumber(), "session.phoneNumber is required");
-        String normalizedContent = requireText(content, "content is required");
+        String normalizedPhoneNumber = requireText(session.getPhoneNumber(), ResponseCode.OUTBOUND_SESSION_PHONE_REQUIRED);
+        String normalizedContent = requireText(content, ResponseCode.OUTBOUND_CONTENT_REQUIRED);
 
         LocalDateTime now = LocalDateTime.now();
         OutboundMessage outbound = repository.save(OutboundMessage.builder()
@@ -86,13 +88,13 @@ public class OutboundMessageServiceImpl implements OutboundMessageService {
 
     private void validateSession(ConversationSession session) {
         if (session == null || session.getId() == null) {
-            throw new IllegalArgumentException("session with id is required");
+            throw new AppException(ResponseCode.OUTBOUND_SESSION_ID_REQUIRED);
         }
     }
 
-    private String requireText(String value, String message) {
+    private String requireText(String value, ResponseCode responseCode) {
         if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(message);
+            throw new AppException(responseCode);
         }
         return value.trim();
     }

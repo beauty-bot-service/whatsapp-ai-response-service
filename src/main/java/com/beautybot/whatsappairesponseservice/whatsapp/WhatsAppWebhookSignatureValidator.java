@@ -1,5 +1,7 @@
 package com.beautybot.whatsappairesponseservice.whatsapp;
 
+import com.beautybot.whatsappairesponseservice.application.exception.AppException;
+import com.beautybot.whatsappairesponseservice.application.exception.ResponseCode;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.Mac;
@@ -44,7 +46,7 @@ public class WhatsAppWebhookSignatureValidator {
             mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), HMAC_SHA256));
             return mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
-            throw new IllegalStateException("Unable to validate WhatsApp webhook signature", e);
+            throw new AppException(ResponseCode.WHATSAPP_SIGNATURE_VALIDATION_ERROR, e);
         }
     }
 

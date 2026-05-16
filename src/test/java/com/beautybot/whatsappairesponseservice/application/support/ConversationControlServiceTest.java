@@ -1,5 +1,7 @@
 package com.beautybot.whatsappairesponseservice.application.support;
 
+import com.beautybot.whatsappairesponseservice.application.exception.AppException;
+import com.beautybot.whatsappairesponseservice.application.exception.ResponseCode;
 import com.beautybot.whatsappairesponseservice.conversation.lock.ConversationDatabaseLockService;
 import com.beautybot.whatsappairesponseservice.conversation.lock.ConversationProcessingLockService;
 import com.beautybot.whatsappairesponseservice.conversation.model.ConversationSession;
@@ -101,7 +103,7 @@ class ConversationControlServiceTest {
     @Test
     void takeoverRequiresPhoneNumber() {
         assertThatThrownBy(() -> service().takeoverByHuman("  ", "hola"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("phoneNumber is required");
+                .isInstanceOfSatisfying(AppException.class, ex ->
+                        assertThat(ex.getResponseCode()).isEqualTo(ResponseCode.CONVERSATION_PHONE_REQUIRED));
     }
 }

@@ -1,5 +1,7 @@
 package com.beautybot.whatsappairesponseservice.outbound.service.impl;
 
+import com.beautybot.whatsappairesponseservice.application.exception.AppException;
+import com.beautybot.whatsappairesponseservice.application.exception.ResponseCode;
 import com.beautybot.whatsappairesponseservice.conversation.model.ConversationSession;
 import com.beautybot.whatsappairesponseservice.observability.BeautyBotMetrics;
 import com.beautybot.whatsappairesponseservice.observability.PhoneNumberMasker;
@@ -101,16 +103,16 @@ class OutboundMessageServiceImplTest {
     @Test
     void sendBotReplyValidatesRequiredData() {
         assertThatThrownBy(() -> service.sendBotReply(null, "hola"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("session with id is required");
+                .isInstanceOfSatisfying(AppException.class, ex ->
+                        assertThat(ex.getResponseCode()).isEqualTo(ResponseCode.OUTBOUND_SESSION_ID_REQUIRED));
 
         assertThatThrownBy(() -> service.sendBotReply(ConversationSession.builder().id(1L).phoneNumber(" ").build(), "hola"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("session.phoneNumber is required");
+                .isInstanceOfSatisfying(AppException.class, ex ->
+                        assertThat(ex.getResponseCode()).isEqualTo(ResponseCode.OUTBOUND_SESSION_PHONE_REQUIRED));
 
         assertThatThrownBy(() -> service.sendBotReply(ConversationSession.builder().id(1L).phoneNumber("5491112345678").build(), " "))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("content is required");
+                .isInstanceOfSatisfying(AppException.class, ex ->
+                        assertThat(ex.getResponseCode()).isEqualTo(ResponseCode.OUTBOUND_CONTENT_REQUIRED));
     }
 
     private ConversationSession session() {

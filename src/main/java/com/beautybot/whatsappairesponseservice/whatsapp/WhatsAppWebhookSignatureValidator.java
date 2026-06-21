@@ -17,8 +17,7 @@ public class WhatsAppWebhookSignatureValidator {
 
     public boolean isValid(String rawPayload, String signatureHeader, String appSecret) {
         if (!hasText(appSecret)) {
-            // Legacy compatibility: if app secret is not configured, signature validation is skipped.
-            return true;
+            return false;
         }
 
         if (rawPayload == null || !hasText(signatureHeader)) {

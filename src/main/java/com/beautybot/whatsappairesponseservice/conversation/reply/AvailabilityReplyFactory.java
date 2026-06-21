@@ -32,7 +32,7 @@ public class AvailabilityReplyFactory {
 
     public String build(String rawMessage) {
         if (!calendarAvailabilityService.isConfigured()) {
-            return "Puedo compartir disponibilidad real cuando el calendario este habilitado en el sistema.";
+            return "La disponibilidad la valida una asesora segun agenda.";
         }
 
         AvailabilityRequest request = availabilityRequestParser.parse(rawMessage, resolveCalendarZoneId());
@@ -42,14 +42,14 @@ public class AvailabilityReplyFactory {
 
         List<AvailabilitySlot> slots = calendarAvailabilityService.findNextAvailableSlots(FETCH_LIMIT);
         if (slots.isEmpty()) {
-            return "En este momento no veo horarios libres dentro de la ventana de agenda configurada.";
+            return "En este momento no veo horarios libres dentro de la agenda configurada.";
         }
 
         String weeklyRanges = formatAvailabilityRanges(slots);
         if (hasText(weeklyRanges)) {
-            return "Esta semana tengo disponibilidad: " + weeklyRanges + ".";
+            return "Te puedo ofrecer " + weeklyRanges + ".";
         }
-        return "Disponibilidades proximas: " + formatSlots(slots.subList(0, Math.min(slots.size(), 3))) + ".";
+        return "Te puedo ofrecer " + formatSlots(slots.subList(0, Math.min(slots.size(), 3))) + ".";
     }
 
     private String buildDateSpecificReply(AvailabilityRequest request) {
@@ -74,11 +74,11 @@ public class AvailabilityReplyFactory {
             String punctualMessage = isRequestedTimeAvailable(request.requestedTime(), daySlots)
                     ? "Para el " + dayLabel + " a las " + request.requestedTime().format(timeFormatter) + " tengo disponibilidad."
                     : "Para el " + dayLabel + " a las " + request.requestedTime().format(timeFormatter) + " no tengo disponibilidad puntual.";
-            return hasText(dayRanges) ? punctualMessage + " Ese dia hay disponibilidad: " + dayRanges + "." : punctualMessage;
+            return hasText(dayRanges) ? punctualMessage + " Ese dia podria ofrecerte " + dayRanges + "." : punctualMessage;
         }
 
         return hasText(dayRanges)
-                ? "Para el " + dayLabel + " tengo disponibilidad: " + dayRanges + "."
+                ? "Para el " + dayLabel + " podria ofrecerte " + dayRanges + "."
                 : "Para el " + dayLabel + " no veo horarios disponibles.";
     }
 

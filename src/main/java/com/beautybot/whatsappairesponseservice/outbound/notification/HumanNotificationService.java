@@ -4,9 +4,8 @@ import com.beautybot.whatsappairesponseservice.conversation.model.ConversationSe
 
 public interface HumanNotificationService {
 
-    void notifyAdvisor(ConversationSession session);
+    boolean notifyAdvisor(ConversationSession session);
 
-    void notifyAdvisorAboutNewCustomerMessage(ConversationSession session, String customerMessage);
+    boolean notifyAdvisorAboutNewCustomerMessage(ConversationSession session, String customerMessage);
 }
-
 

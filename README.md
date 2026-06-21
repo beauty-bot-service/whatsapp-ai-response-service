@@ -14,7 +14,7 @@ Objetivo del MVP:
 - Java 21
 - Spring Boot 3.3.5
 - PostgreSQL (deploy) / H2 en memoria (fallback local)
-- Decision conversacional por IA (opcional) con fallback rule-based
+- Decision conversacional por IA (opcional) con Prompt Template obligatorio y fallback rule-based
 - Consulta de disponibilidad con Google Calendar (opcional)
 - Dockerfile multi-stage
 - MapStruct para mapeos entre capas
@@ -84,9 +84,8 @@ El `Dockerfile` ya fue adaptado para usar esas variables y generar `/root/.m2/se
 
 - Guia completa paso a paso: [docs/CONFIGURACION_COMPLETA.md](docs/CONFIGURACION_COMPLETA.md)
 - Variables de entorno de referencia: [.env.example](.env.example)
-- Templates sugeridos de IA:
+- Template de IA:
   - [docs/prompts/AI_DECISION_PROMPT_TEMPLATE.md](docs/prompts/AI_DECISION_PROMPT_TEMPLATE.md)
-  - [docs/prompts/AI_REPLY_PROMPT_TEMPLATE.md](docs/prompts/AI_REPLY_PROMPT_TEMPLATE.md)
 
 ## Arquitectura en capas
 
@@ -107,8 +106,8 @@ POST /chat/test
   -> saveInbound
   -> ConversationContextBuilder
   -> ConversationDecisionRouter
-       -> AI decision (opcional, si beauty-bot.ai.enabled=true y beauty-bot.ai.decision.enabled=true)
-       -> fallback rule-based (si falla AI y beauty-bot.ai.decision.fallback-enabled=true)
+       -> AI decision (opcional, si beauty-bot.ai.enabled=true, beauty-bot.ai.decision.enabled=true y hay prompt template configurado)
+       -> fallback rule-based (si falla el request de AI y beauty-bot.ai.decision.fallback-enabled=true)
   -> ConversationDecisionValidator (normaliza y corrige invariantes)
   -> ConversationService.applyDecision
   -> saveOutbound
@@ -188,14 +187,14 @@ beauty-bot:
     model: "gpt-5.4-mini"
 ```
 
-Opcional (recomendado): usar Prompt Templates para no mandar instrucciones en cada request:
+Cuando la decision por IA esta activa, configurar el Prompt Template de OpenAI:
 
 ```text
 BEAUTY_BOT_AI_DECISION_PROMPT_ID=pmpt_xxx
-BEAUTY_BOT_AI_REPLY_PROMPT_ID=pmpt_yyy
+BEAUTY_BOT_AI_DECISION_PROMPT_VERSION=v4
 ```
 
-Con eso, el backend envia solo contexto dinamico como variables (`conversation_context` y `reply_context`).
+El backend envia el `prompt.id` y solo contexto dinamico en la variable `conversation_context`. Las reglas, formato JSON, estados e intents permitidos viven en el prompt template versionado.
 
 Tambien podes arrancar con property:
 
@@ -206,7 +205,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--beauty-bot.ai.enabled=true"
 ## Que hace la IA en este MVP
 
 La IA puede decidir el estado conversacional y la respuesta final usando contexto completo.
-Si falla o devuelve algo invalido, el backend aplica validaciones e invariantes y puede caer al flujo rule-based.
+Si el request falla, puede caer al flujo rule-based. Si falta configuracion obligatoria de IA, se reporta error de configuracion.
 
 ## Endpoints
 
@@ -266,6 +265,7 @@ Notas:
 2. Compartir el calendario con el email de la service account con permiso de lectura.
 3. Usar `GOOGLE_SERVICE_ACCOUNT_JSON_BASE64` (recomendado) para evitar problemas de formato multiline.
 4. Esta version sugiere disponibilidad, pero no confirma ni crea turnos en agenda automaticamente.
+5. Si Google Calendar falla al consultar disponibilidad, el bot deriva la conversacion a una asesora.
 
 ## Integracion con WhatsApp Cloud API
 
@@ -273,10 +273,13 @@ Configurar variables de entorno:
 
 ```powershell
 $env:OPENAI_API_KEY="tu_api_key"
+$env:BEAUTY_BOT_INTERNAL_API_KEY_ENABLED="true"
+$env:BEAUTY_BOT_INTERNAL_API_KEY="Bearer token_interno_largo"
 $env:WHATSAPP_VERIFY_TOKEN="token_verificacion_webhook"
 $env:WHATSAPP_ACCESS_TOKEN="token_de_acceso_meta"
 $env:WHATSAPP_APP_SECRET="app_secret_meta"
 $env:WHATSAPP_PHONE_NUMBER_ID="phone_number_id_meta"
+$env:BEAUTY_BOT_ADVISOR_NOTIFICATION_PHONE_NUMBER="54911XXXXXXXX"
 ```
 
 Config minima en `application.yml`:
@@ -298,7 +301,8 @@ Luego:
 2. En Meta Developers, setear callback URL: `https://<tu-url-publica>/whatsapp-ai-response-service/v1/whatsapp/webhook`.
 3. Usar el mismo `verify-token` para la verificacion.
 4. Suscribirse al evento `messages` del webhook.
-5. Configurar `WHATSAPP_APP_SECRET` para validar `X-Hub-Signature-256`.
+5. Configurar `WHATSAPP_APP_SECRET` para validar `X-Hub-Signature-256`. Es obligatorio si `WHATSAPP_ENABLED=true`.
+6. Configurar `BEAUTY_BOT_ADVISOR_NOTIFICATION_PHONE_NUMBER` para que los handoffs se notifiquen por WhatsApp.
 
 Con eso, los mensajes entrantes de WhatsApp se procesan por `ChatService` y la respuesta se envia por Cloud API.
 
@@ -346,6 +350,9 @@ WHATSAPP_VERIFY_TOKEN=...
 WHATSAPP_ACCESS_TOKEN=...
 WHATSAPP_APP_SECRET=...
 WHATSAPP_PHONE_NUMBER_ID=...
+BEAUTY_BOT_INTERNAL_API_KEY_ENABLED=true
+BEAUTY_BOT_INTERNAL_API_KEY=...
+BEAUTY_BOT_ADVISOR_NOTIFICATION_PHONE_NUMBER=...
 BEAUTY_BOT_CAN_CHECK_AVAILABILITY=true|false
 BEAUTY_BOT_CALENDAR_ENABLED=true|false
 GOOGLE_CALENDAR_ID=...

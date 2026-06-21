@@ -22,7 +22,7 @@ public enum ResponseCode {
     OUTBOUND_SESSION_ID_REQUIRED("OUTBOUND_SESSION_ID_REQUIRED", "session with id is required.", "La sesion es obligatoria."),
     OUTBOUND_SESSION_PHONE_REQUIRED("OUTBOUND_SESSION_PHONE_REQUIRED", "session.phoneNumber is required.", "El telefono de la sesion es obligatorio."),
     OUTBOUND_CONTENT_REQUIRED("OUTBOUND_CONTENT_REQUIRED", "content is required.", "El contenido del mensaje es obligatorio."),
-    AI_DECISION_CONFIGURATION_ERROR("AI_DECISION_CONFIGURATION_ERROR", "AI decision is enabled but OPENAI_API_KEY is missing or AI is disabled.", "No se pudo procesar la solicitud en este momento."),
+    AI_DECISION_CONFIGURATION_ERROR("AI_DECISION_CONFIGURATION_ERROR", "AI decision is enabled but OPENAI_API_KEY or decision prompt template is missing, or AI is disabled.", "No se pudo procesar la solicitud en este momento."),
     AI_DECISION_REQUEST_FAILED("AI_DECISION_REQUEST_FAILED", "AI conversation decision failed: %s.", "No se pudo procesar la solicitud en este momento."),
     WHATSAPP_SIGNATURE_VALIDATION_ERROR("WHATSAPP_SIGNATURE_VALIDATION_ERROR", "Unable to validate WhatsApp webhook signature.", "No se pudo validar la firma del webhook."),
     BAD_REQUEST("BAD_REQUEST", "Bad request.", "La solicitud es invalida.");

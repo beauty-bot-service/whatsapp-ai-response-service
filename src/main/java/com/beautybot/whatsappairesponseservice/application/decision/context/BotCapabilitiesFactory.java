@@ -2,6 +2,7 @@ package com.beautybot.whatsappairesponseservice.application.decision.context;
 
 import com.beautybot.whatsappairesponseservice.config.BeautyBotProperties;
 import com.beautybot.whatsappairesponseservice.conversation.decision.BotCapabilities;
+import com.beautybot.whatsappairesponseservice.calendar.CalendarAvailabilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
 public class BotCapabilitiesFactory {
 
     private final BeautyBotProperties properties;
+    private final CalendarAvailabilityService calendarAvailabilityService;
 
     public BotCapabilities build() {
         BeautyBotProperties.BotCapabilitiesConfig capabilities = properties.getBotCapabilities() == null
@@ -19,7 +21,7 @@ public class BotCapabilitiesFactory {
                 .canCollectLeadData(capabilities.isCanCollectLeadData())
                 .canNotifyHuman(capabilities.isCanNotifyHuman())
                 .canConfirmAppointment(capabilities.isCanConfirmAppointment())
-                .canCheckAvailability(capabilities.isCanCheckAvailability())
+                .canCheckAvailability(capabilities.isCanCheckAvailability() && calendarAvailabilityService.isConfigured())
                 .canGiveExactPrices(capabilities.isCanGiveExactPrices())
                 .canProvideMedicalAdvice(capabilities.isCanProvideMedicalAdvice())
                 .canCancelAppointments(capabilities.isCanCancelAppointments())

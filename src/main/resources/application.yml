@@ -29,6 +29,7 @@ beauty-bot:
   location: ${BEAUTY_BOT_LOCATION:Cochabamba 427}
   opening-hours: ${BEAUTY_BOT_OPENING_HOURS:Lunes a viernes de 9 a 18 hs}
   advisor-notification-enabled: ${BEAUTY_BOT_ADVISOR_NOTIFICATION_ENABLED:true}
+  advisor-notification-phone-number: ${BEAUTY_BOT_ADVISOR_NOTIFICATION_PHONE_NUMBER:}
   test-endpoints-enabled: ${BEAUTY_BOT_TEST_ENDPOINTS_ENABLED:false}
   bot-capabilities:
     can-collect-lead-data: true
@@ -72,7 +73,7 @@ beauty-bot:
     ready-for-human-reuse-hours: ${BEAUTY_BOT_CONVERSATION_READY_FOR_HUMAN_REUSE_HOURS:168}
     human-handoff-reuse-hours: ${BEAUTY_BOT_CONVERSATION_HUMAN_HANDOFF_REUSE_HOURS:168}
   security:
-    internal-api-key-enabled: ${BEAUTY_BOT_INTERNAL_API_KEY_ENABLED:false}
+    internal-api-key-enabled: ${BEAUTY_BOT_INTERNAL_API_KEY_ENABLED:true}
     internal-api-key-header: ${BEAUTY_BOT_INTERNAL_API_KEY_HEADER:Authorization}
     internal-api-key: ${BEAUTY_BOT_INTERNAL_API_KEY:}
   observability:

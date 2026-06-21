@@ -15,6 +15,7 @@ public class BeautyBotProperties {
     private String location;
     private String openingHours;
     private boolean advisorNotificationEnabled;
+    private String advisorNotificationPhoneNumber;
     /**
      * Habilita endpoints de prueba/administracion simples. Debe quedar false fuera de local.
      */

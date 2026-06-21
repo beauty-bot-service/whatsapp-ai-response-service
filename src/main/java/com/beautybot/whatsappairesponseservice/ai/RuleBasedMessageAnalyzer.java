@@ -20,8 +20,11 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
     private static final Pattern SELF_IDENTIFICATION_PATTERN = Pattern.compile(
             "(?i)\\b(?:soy|me llamo|mi nombre es)\\s+([\\p{L} ]{2,60})"
     );
+    private static final Pattern LEADING_NAME_WITH_CONTEXT_PATTERN = Pattern.compile(
+            "(?i)^\\s*([\\p{L} ]{2,60})[\\.,]\\s*(?:me\\s+interesa(?:n)?|quiero|busco|consulta|consulto|queria|me\\s+gustaria)\\b"
+    );
     private static final Pattern NAME_TRAILING_CONTEXT_PATTERN = Pattern.compile(
-            "(?i)\\b(?:y|quiero|consulta|turno|precio|costo|valor|horario|ubicacion|direccion|donde|porque|pero|para)\\b"
+            "(?i)\\b(?:y|quiero|consulta|consulto|turno|precio|costo|valor|horario|ubicacion|direccion|donde|porque|pero|para|me\\s+interesa)\\b"
     );
     private static final Pattern STRICT_NAME_PATTERN = Pattern.compile(
             "^[\\p{L}]{2,40}(?:\\s+[\\p{L}]{2,40}){0,2}$"
@@ -31,7 +34,19 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
     private static final List<String> MEDICAL_TERMS = List.of(
             "me conviene", "que me recomendas", "que me recomiendas", "riesgo", "riesgos",
             "diagnostico", "dolor", "embarazada", "medicacion", "enfermedad", "apto", "apta",
-            "foto", "imagen", "te mando una foto"
+            "hematoma", "alergia", "alergias", "contraindicacion", "contraindicaciones",
+            "post tratamiento", "postratamiento", "complicacion", "complicaciones"
+    );
+
+    private static final List<String> MEDIA_REQUEST_TERMS = List.of(
+            "foto", "fotos", "imagen", "imagenes", "video", "videos", "multimedia",
+            "trabajos", "resultados", "antes y despues", "ejemplos"
+    );
+
+    private static final List<String> ADMINISTRATIVE_HUMAN_TERMS = List.of(
+            "sena", "senar", "comprobante", "transferencia", "pago", "pague", "abone",
+            "cbu", "alias", "mercado pago", "confirmo", "confirmar turno", "confirmacion",
+            "te confirmo", "debo senar", "como confirmo"
     );
 
     private static final List<String> HUMAN_TERMS = List.of(
@@ -43,15 +58,19 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
     );
 
     private static final List<String> APPOINTMENT_TERMS = List.of(
-            "turno", "consulta", "reservar", "agendar", "cita", "coordinar"
+            "turno", "turnito", "consulta", "reservar", "reserva", "agendar", "agenda",
+            "cita", "coordinar", "quiero reservar", "me gustaria agendar"
     );
 
     private static final List<String> PRICE_TERMS = List.of(
-            "precio", "sale", "cuanto", "valor", "costo", "tarifa", "cuesta"
+            "precio", "precios", "promo", "promos", "promocion", "promociones",
+            "descuento", "sale", "cuanto", "valor", "costo", "tarifa", "cuesta",
+            "efectivo", "cuotas", "tarjeta", "$"
     );
 
     private static final List<String> LOCATION_TERMS = List.of(
-            "ubicacion", "direccion", "donde estan", "sucursal", "local"
+            "ubicacion", "direccion", "donde estan", "sucursal", "local", "sede",
+            "rio cuarto", "cordoba capital", "cerca", "kempes", "barrio"
     );
 
     private static final List<String> OPENING_HOURS_TERMS = List.of(
@@ -60,19 +79,30 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
 
     private static final List<String> AVAILABILITY_TERMS = List.of(
             "disponibilidad", "disponible", "horarios disponibles", "turnos disponibles",
-            "agenda disponible", "huecos", "huecos disponibles", "que turnos tienen", "lugares disponibles"
+            "agenda disponible", "huecos", "huecos disponibles", "que turnos tienen", "lugares disponibles",
+            "para cuando", "cuando tendrias", "cuando tenes", "cuando tienen", "hay turno",
+            "tenes turno", "tendrias turno", "fecha", "fechas", "primer turnito"
     );
     private static final List<String> DATE_AVAILABILITY_TERMS = List.of(
             "turno", "turnos", "disponib", "agenda", "hueco", "huecos", "lugar", "libre"
     );
 
-    private static final List<String> CANCEL_TERMS = List.of("cancelar", "cancelo", "anular");
-    private static final List<String> RESCHEDULE_TERMS = List.of("reprogramar", "cambiar turno", "mover turno");
+    private static final List<String> TREATMENT_INFO_TERMS = List.of(
+            "jeringa", "media jeringa", "jeringa completa", "completa", "marca", "marcas",
+            "dura", "demora", "tiempo demora", "cuanto tiempo", "incluye", "retoque",
+            "control", "procedimiento"
+    );
+
+    private static final List<String> CANCEL_TERMS = List.of("cancelar", "cancelo", "anular", "baja del turno");
+    private static final List<String> RESCHEDULE_TERMS = List.of(
+            "reprogramar", "cambiar turno", "mover turno", "pasar el turno", "otro horario",
+            "otra fecha", "no puedo ir", "no llego"
+    );
     private static final List<String> FIRST_TIME_YES_TERMS = List.of("si", "sip", "sisi", "claro", "correcto", "afirmativo");
     private static final List<String> FIRST_TIME_NO_TERMS = List.of("no", "nop", "negativo");
     private static final List<String> TIME_CONTEXT_TERMS = List.of(
             "lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo",
-            "manana", "tarde", "noche", "mediodia", "semana que viene", "hoy", "pasado"
+            "manana", "tarde", "noche", "mediodia", "temprano", "semana que viene", "hoy", "pasado"
     );
 
     private static final List<String> CONTACT_ME_TERMS = List.of(
@@ -83,13 +113,22 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
             "que una asesora me contacte", "que una asesora me escriba"
     );
 
+    private static final List<String> THANKS_TERMS = List.of(
+            "gracias", "muchas gracias", "mil gracias", "dale gracias", "ok gracias"
+    );
+
     @Override
     public MessageAnalysis analyze(String message, ConversationSession session) {
         String normalizedMessage = normalize(message);
         RequiredField waitingForField = session.getWaitingForField();
+        boolean contactPreferenceReply = waitingForField == RequiredField.PREFERRED_TIME
+                && containsAny(normalizedMessage, CONTACT_ME_TERMS);
 
         boolean medicalQuestion = containsAny(normalizedMessage, MEDICAL_TERMS);
-        boolean wantsHuman = containsAny(normalizedMessage, HUMAN_TERMS);
+        boolean mediaRequest = containsAny(normalizedMessage, MEDIA_REQUEST_TERMS);
+        boolean administrativeHuman = containsAny(normalizedMessage, ADMINISTRATIVE_HUMAN_TERMS);
+        boolean wantsHuman = !contactPreferenceReply
+                && (containsAny(normalizedMessage, HUMAN_TERMS) || mediaRequest || administrativeHuman);
         boolean angry = containsAny(normalizedMessage, ANGRY_TERMS);
         List<Intent> intents = resolveIntents(normalizedMessage, medicalQuestion, wantsHuman);
         Intent primaryIntent = intents.isEmpty() ? Intent.UNKNOWN : intents.getFirst();
@@ -117,6 +156,7 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
         if (containsAny(normalized, RESCHEDULE_TERMS)) detected.add(Intent.RESCHEDULE);
         if (containsAny(normalized, CANCEL_TERMS)) detected.add(Intent.CANCEL);
         if (containsAny(normalized, PRICE_TERMS)) detected.add(Intent.PRICE_QUESTION);
+        if (containsAny(normalized, TREATMENT_INFO_TERMS)) detected.add(Intent.TREATMENT_INFO);
         if (containsAny(normalized, LOCATION_TERMS)) detected.add(Intent.LOCATION_QUESTION);
         if (containsAny(normalized, OPENING_HOURS_TERMS)) detected.add(Intent.OPENING_HOURS_QUESTION);
         if (containsAny(normalized, AVAILABILITY_TERMS) || looksLikeDateAvailabilityQuestion(normalized)) {
@@ -124,6 +164,7 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
         }
         if (containsAny(normalized, APPOINTMENT_TERMS)) detected.add(Intent.APPOINTMENT_REQUEST);
         if (isGreeting(normalized)) detected.add(Intent.GREETING);
+        if (containsAny(normalized, THANKS_TERMS)) detected.add(Intent.THANKS);
 
         if (detected.isEmpty()) {
             detected.add(Intent.UNKNOWN);
@@ -133,15 +174,53 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
     }
 
     private String extractTreatment(String normalized) {
-        if (containsAny(normalized, List.of("botox", "toxina"))) return "Botox";
-        if (containsAny(normalized, List.of("relleno", "acido hialuronico", "hialuronico"))) return "Relleno con acido hialuronico";
-        if (containsAny(normalized, List.of("rinoplastia", "nariz"))) return "Rinoplastia";
-        if (containsAny(normalized, List.of("lipo", "liposuccion", "lipoescultura"))) return "Lipoescultura";
-        if (containsAny(normalized, List.of("aumento mamario", "mamas", "pechos", "implantes"))) return "Aumento mamario";
-        if (containsAny(normalized, List.of("depilacion", "laser"))) return "Depilacion laser";
-        if (containsAny(normalized, List.of("limpieza facial", "facial"))) return "Limpieza facial";
-        if (containsAny(normalized, List.of("peeling"))) return "Peeling";
-        return null;
+        Set<String> treatments = new LinkedHashSet<>();
+        if (containsAny(normalized, List.of("botox", "toxina", "dysport", "bruxismo"))) {
+            treatments.add("Botox");
+        }
+        if (containsAny(normalized, List.of("rinolips"))) {
+            treatments.add("Rinolips");
+        }
+        if (containsAny(normalized, List.of("relleno", "acido hialuronico", "hialuronico", "a.h", "a h", "labios", "lips"))
+                || looksLikeAcidoHialuronicoAbbreviation(normalized)) {
+            treatments.add("Relleno con acido hialuronico");
+        }
+        if (containsAny(normalized, List.of("hilos", "hilo tensor", "hilos tensores"))) {
+            treatments.add("Hilos tensores");
+        }
+        if (containsAny(normalized, List.of("sculptra", "bioestimulador", "bioestimuladores"))) {
+            treatments.add("Bioestimulador");
+        }
+        if (containsAny(normalized, List.of("hydroxyfill"))) {
+            treatments.add("Hydroxyfill");
+        }
+        if (containsAny(normalized, List.of("rinoplastia", "nariz"))) {
+            treatments.add("Rinoplastia");
+        }
+        if (containsAny(normalized, List.of("lipo", "liposuccion", "lipoescultura"))) {
+            treatments.add("Lipoescultura");
+        }
+        if (containsAny(normalized, List.of("aumento mamario", "mamas", "pechos", "implantes"))) {
+            treatments.add("Aumento mamario");
+        }
+        if (containsAny(normalized, List.of("depilacion", "laser"))) {
+            treatments.add("Depilacion laser");
+        }
+        if (containsAny(normalized, List.of("limpieza facial", "facial"))) {
+            treatments.add("Limpieza facial");
+        }
+        if (containsAny(normalized, List.of("peeling"))) {
+            treatments.add("Peeling");
+        }
+        if (treatments.isEmpty()) {
+            return null;
+        }
+        return String.join(" y ", treatments);
+    }
+
+    private boolean looksLikeAcidoHialuronicoAbbreviation(String normalized) {
+        return containsAnyWholeWord(normalized, List.of("ah"))
+                && containsAny(normalized, List.of("botox", "labios", "relleno", "promo", "promos", "hialuronico"));
     }
 
     private String extractName(
@@ -161,6 +240,11 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
             }
         }
 
+        String extractedFromLeadingContext = extractNameFromLeadingContext(original);
+        if (extractedFromLeadingContext != null) {
+            return extractedFromLeadingContext;
+        }
+
         if (waitingForField == RequiredField.NAME && !containsStrongTimeSignal(normalized)) {
             String relaxedCandidate = trimTrailingContextFromName(cleanName(original));
             if (isLikelyNameCandidate(relaxedCandidate)) {
@@ -173,22 +257,34 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
 
     private Boolean extractFirstTime(String normalized, RequiredField waitingForField) {
         if (waitingForField == RequiredField.FIRST_TIME) {
-            if (containsAny(normalized, List.of("primera vez", "nunca fui"))
+            if (containsAny(normalized, List.of(
+                    "primera vez", "primera consulta", "es mi primera", "nunca fui",
+                    "nunca realice", "nunca me realice", "nunca hice", "nunca me hice"
+            ))
                     || containsAnyWholeWord(normalized, FIRST_TIME_YES_TERMS)) {
                 return true;
             }
-            if (containsAny(normalized, List.of("ya fui", "ya soy paciente", "no es primera vez"))
+            if (containsAny(normalized, List.of(
+                    "ya fui", "ya soy paciente", "no es primera vez", "ya realice",
+                    "ya me realice", "ya hice", "ya me hice"
+            ))
                     || containsAnyWholeWord(normalized, FIRST_TIME_NO_TERMS)) {
                 return false;
             }
             return null;
         }
 
-        if (containsAny(normalized, List.of("primera vez", "nunca fui"))
+        if (containsAny(normalized, List.of(
+                "primera vez", "primera consulta", "es mi primera", "nunca fui",
+                "nunca realice", "nunca me realice", "nunca hice", "nunca me hice"
+        ))
                 || containsAnyWholeWord(normalized, List.of("nuevo", "nueva"))) {
             return true;
         }
-        if (containsAny(normalized, List.of("ya fui", "ya soy paciente", "no es primera vez"))
+        if (containsAny(normalized, List.of(
+                "ya fui", "ya soy paciente", "no es primera vez", "ya realice",
+                "ya me realice", "ya hice", "ya me hice"
+        ))
                 || containsAnyWholeWord(normalized, List.of("paciente"))) {
             return false;
         }
@@ -220,7 +316,10 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
         if (Pattern.compile("\\b\\d{1,2}:\\d{2}\\b").matcher(normalized).find()) {
             return true;
         }
-        if (Pattern.compile("\\b(?:a las|desde las|tipo|entre las)\\s+\\d{1,2}\\b").matcher(normalized).find()) {
+        if (Pattern.compile("\\b(?:a las|desde las|tipo|entre las|despues de las|antes de las|a partir de las)\\s+\\d{1,2}\\b").matcher(normalized).find()) {
+            return true;
+        }
+        if (Pattern.compile("\\b(?:primer|primerito|ultimo)\\s+turn").matcher(normalized).find()) {
             return true;
         }
         return Pattern.compile("\\b\\d{1,2}\\s*(?:am|pm|hs)\\b").matcher(normalized).find();
@@ -253,7 +352,8 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
         if (containsAny(normalize(cleaned), APPOINTMENT_TERMS)
                 || containsAny(normalize(cleaned), PRICE_TERMS)
                 || containsAny(normalize(cleaned), LOCATION_TERMS)
-                || containsAny(normalize(cleaned), OPENING_HOURS_TERMS)) {
+                || containsAny(normalize(cleaned), OPENING_HOURS_TERMS)
+                || isDisallowedNameCandidate(cleaned)) {
             return false;
         }
         return Pattern.compile("^[\\p{L} ]{2,40}$").matcher(cleaned).matches();
@@ -273,6 +373,19 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
         return candidate;
     }
 
+    private String extractNameFromLeadingContext(String original) {
+        Matcher matcher = LEADING_NAME_WITH_CONTEXT_PATTERN.matcher(original);
+        if (!matcher.find()) {
+            return null;
+        }
+
+        String candidate = cleanName(matcher.group(1));
+        if (isLikelyNameCandidate(candidate)) {
+            return candidate;
+        }
+        return null;
+    }
+
     private String trimTrailingContextFromName(String candidate) {
         Matcher matcher = NAME_TRAILING_CONTEXT_PATTERN.matcher(candidate);
         if (!matcher.find()) {
@@ -282,7 +395,16 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
     }
 
     private boolean isStrictNameCandidate(String value) {
-        return STRICT_NAME_PATTERN.matcher(value).matches();
+        return STRICT_NAME_PATTERN.matcher(value).matches() && !isDisallowedNameCandidate(value);
+    }
+
+    private boolean isDisallowedNameCandidate(String value) {
+        String normalized = normalize(value);
+        return List.of(
+                "hola", "buen dia", "buenas", "buenas tardes", "buenas noches",
+                "dale", "ok", "si", "no", "gracias", "perfecto", "genial",
+                "excelente", "espectacular"
+        ).contains(normalized);
     }
 
     private boolean containsAny(String text, List<String> terms) {
@@ -294,7 +416,7 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
     }
 
     private boolean isGreeting(String normalized) {
-        return Pattern.compile("^(hola|buenas)\\b").matcher(normalized).find();
+        return Pattern.compile("^(hola|buen dia|buenos dias|buenas|buenas tardes|buenas noches|como va)\\b").matcher(normalized).find();
     }
 
     private String normalize(String value) {
@@ -309,4 +431,3 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
                 .replaceAll("\\s+", " ");
     }
 }
-

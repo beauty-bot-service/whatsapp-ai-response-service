@@ -102,4 +102,60 @@ class RuleBasedMessageAnalyzerTest {
 
         assertThat(analysis.getPreferredTime()).isEqualTo("5/4 a las 15:30");
     }
+
+    @Test
+    void extractsNameTreatmentAndPriceIntentFromPromoMessage() {
+        ConversationSession session = ConversationSession.builder()
+                .waitingForField(RequiredField.TREATMENT)
+                .build();
+
+        MessageAnalysis analysis = analyzer.analyze("Flor. Me interesan promos en botox y AH", session);
+
+        assertThat(analysis.getExtractedName()).isEqualTo("Flor");
+        assertThat(analysis.getTreatment()).isEqualTo("Botox y Relleno con acido hialuronico");
+        assertThat(analysis.getIntents()).contains(Intent.PRICE_QUESTION);
+    }
+
+    @Test
+    void routesMediaRequestsToHumanWithoutMarkingAsMedicalQuestion() {
+        ConversationSession session = ConversationSession.builder().build();
+
+        MessageAnalysis analysis = analyzer.analyze("Me pasarias imagenes de labios?", session);
+
+        assertThat(analysis.getMedicalQuestion()).isFalse();
+        assertThat(analysis.getWantsHuman()).isTrue();
+        assertThat(analysis.getIntents()).contains(Intent.HUMAN_REQUEST);
+    }
+
+    @Test
+    void treatsPaymentOrConfirmationMessagesAsHumanRequest() {
+        ConversationSession session = ConversationSession.builder().build();
+
+        MessageAnalysis analysis = analyzer.analyze("Buen dia, ahi estaria el comprobante de la sena", session);
+
+        assertThat(analysis.getWantsHuman()).isTrue();
+        assertThat(analysis.getIntents()).contains(Intent.HUMAN_REQUEST);
+    }
+
+    @Test
+    void extractsFirstTimeFromNeverDidItExpression() {
+        ConversationSession session = ConversationSession.builder()
+                .waitingForField(RequiredField.FIRST_TIME)
+                .build();
+
+        MessageAnalysis analysis = analyzer.analyze("Nunca realice", session);
+
+        assertThat(analysis.getFirstTime()).isTrue();
+    }
+
+    @Test
+    void extractsFlexiblePreferredTimeWhenWaitingForTime() {
+        ConversationSession session = ConversationSession.builder()
+                .waitingForField(RequiredField.PREFERRED_TIME)
+                .build();
+
+        MessageAnalysis analysis = analyzer.analyze("Podria despues de las 18:30 o a la manana temprano", session);
+
+        assertThat(analysis.getPreferredTime()).isEqualTo("Podria despues de las 18:30 o a la manana temprano");
+    }
 }

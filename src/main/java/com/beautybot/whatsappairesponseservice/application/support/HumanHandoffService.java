@@ -45,8 +45,9 @@ public class HumanHandoffService {
         if (!shouldNotifyAdvisor(previousState, finalDecision, session)) {
             return;
         }
-        humanNotificationService.notifyAdvisor(session);
-        conversationService.markHumanNotifiedNow(session);
+        if (humanNotificationService.notifyAdvisor(session)) {
+            conversationService.markHumanNotifiedNow(session);
+        }
     }
 
     private boolean shouldNotifyAdvisor(

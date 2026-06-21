@@ -6,6 +6,8 @@ Variable esperada por el backend:
 
 - `{{conversation_context}}`
 
+El backend solo inyecta contexto dinamico en esa variable: clinica, capacidades activas, sesion actual, mensaje actual, ultimo mensaje del bot, mensajes recientes, pedido de disponibilidad y sugerencias calculadas. Las reglas, formato JSON, estados e intents permitidos deben vivir en este template.
+
 ## Contenido sugerido del prompt
 
 ```text

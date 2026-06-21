@@ -45,7 +45,7 @@
 - Se eliminaron clases legacy que ya no formaban parte del pipeline principal: `ConversationEngine`, `ReplyGenerator`, `OpenAiReplyService` y `OpenAiReplyRequestFactory`.
 - `BotResponseService` quedó como fachada liviana para construir decisiones rule-based, delegando textos a factories especializadas.
 - Se dividió la generación de respuestas en `HandoffReplyFactory`, `LeadCollectionReplyFactory`, `InformationalReplyFactory`, `AvailabilityReplyFactory`, `HumanSummaryFactory` y `ReplyStyleNormalizer`.
-- `ConversationContextBuilder` quedó reducido a orquestar providers, delegando en `ClinicContextFactory`, `BotCapabilitiesFactory`, `RecentMessageContextProvider`, `AvailabilityContextProvider` y `DecisionRulesProvider`.
+- `ConversationContextBuilder` quedó reducido a orquestar providers, delegando en `ClinicContextFactory`, `BotCapabilitiesFactory`, `RecentMessageContextProvider` y `AvailabilityContextProvider`.
 - Se removieron tests legacy asociados a clases eliminadas y se actualizaron los tests que todavía dependían de `BotDecision`.
 
 ## Tercera tanda: hardening de pre-produccion

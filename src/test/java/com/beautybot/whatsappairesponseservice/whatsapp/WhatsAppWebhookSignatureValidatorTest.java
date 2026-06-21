@@ -14,9 +14,9 @@ class WhatsAppWebhookSignatureValidatorTest {
     private final WhatsAppWebhookSignatureValidator validator = new WhatsAppWebhookSignatureValidator();
 
     @Test
-    void acceptsWhenAppSecretIsNotConfigured() {
-        assertThat(validator.isValid("{\"entry\":[]}", null, null)).isTrue();
-        assertThat(validator.isValid("{\"entry\":[]}", "", "   ")).isTrue();
+    void rejectsWhenAppSecretIsNotConfigured() {
+        assertThat(validator.isValid("{\"entry\":[]}", null, null)).isFalse();
+        assertThat(validator.isValid("{\"entry\":[]}", "", "   ")).isFalse();
     }
 
     @Test

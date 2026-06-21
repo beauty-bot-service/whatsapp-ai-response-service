@@ -18,8 +18,14 @@ public class WhatsAppConfigHealthIndicator implements HealthIndicator {
         if (whatsapp == null || !whatsapp.isEnabled()) {
             return Health.up().withDetail("enabled", false).build();
         }
-        if (isBlank(whatsapp.getAccessToken()) || isBlank(whatsapp.getPhoneNumberId()) || isBlank(whatsapp.getVerifyToken())) {
+        if (isBlank(whatsapp.getAccessToken())
+                || isBlank(whatsapp.getPhoneNumberId())
+                || isBlank(whatsapp.getVerifyToken())
+                || isBlank(whatsapp.getAppSecret())) {
             return Health.down().withDetail("enabled", true).withDetail("reason", "WhatsApp config incomplete").build();
+        }
+        if (properties.isAdvisorNotificationEnabled() && isBlank(properties.getAdvisorNotificationPhoneNumber())) {
+            return Health.down().withDetail("enabled", true).withDetail("reason", "advisor notification phone missing").build();
         }
         return Health.up().withDetail("enabled", true).build();
     }

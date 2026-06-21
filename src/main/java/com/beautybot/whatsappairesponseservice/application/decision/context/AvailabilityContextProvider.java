@@ -3,6 +3,7 @@ package com.beautybot.whatsappairesponseservice.application.decision.context;
 import com.beautybot.whatsappairesponseservice.calendar.AvailabilityRequest;
 import com.beautybot.whatsappairesponseservice.calendar.AvailabilityRequestParser;
 import com.beautybot.whatsappairesponseservice.calendar.AvailabilitySlot;
+import com.beautybot.whatsappairesponseservice.calendar.CalendarAvailabilityException;
 import com.beautybot.whatsappairesponseservice.calendar.CalendarAvailabilityService;
 import com.beautybot.whatsappairesponseservice.config.BeautyBotProperties;
 import lombok.RequiredArgsConstructor;
@@ -40,19 +41,32 @@ public class AvailabilityContextProvider {
         return request != null && (request.hasDate() || request.hasTime()) ? request : null;
     }
 
-    public List<String> buildSuggestions(AvailabilityRequest request) {
+    public AvailabilityLookupResult buildAvailability(AvailabilityRequest request) {
         if (!calendarAvailabilityService.isConfigured()) {
-            return List.of();
+            return AvailabilityLookupResult.empty();
         }
-        if (request != null && request.hasDate()) {
-            return buildDateSpecificSuggestions(request, calendarAvailabilityService.findAvailableSlots(request, FETCH_LIMIT));
+        try {
+            if (request != null && request.hasDate()) {
+                return AvailabilityLookupResult.success(buildDateSpecificSuggestions(
+                        request,
+                        calendarAvailabilityService.findAvailableSlots(request, FETCH_LIMIT)
+                ));
+            }
+            List<AvailabilitySlot> slots = calendarAvailabilityService.findNextAvailableSlots(FETCH_LIMIT);
+            if (slots.isEmpty()) {
+                return AvailabilityLookupResult.empty();
+            }
+            List<AvailabilitySlot> weeklySlots = filterUpcomingWeekSlots(slots);
+            return weeklySlots.isEmpty()
+                    ? AvailabilityLookupResult.empty()
+                    : AvailabilityLookupResult.success(buildDayRanges(weeklySlots));
+        } catch (CalendarAvailabilityException e) {
+            return AvailabilityLookupResult.failed(e.getMessage());
         }
-        List<AvailabilitySlot> slots = calendarAvailabilityService.findNextAvailableSlots(FETCH_LIMIT);
-        if (slots.isEmpty()) {
-            return List.of();
-        }
-        List<AvailabilitySlot> weeklySlots = filterUpcomingWeekSlots(slots);
-        return weeklySlots.isEmpty() ? List.of() : buildDayRanges(weeklySlots);
+    }
+
+    public List<String> buildSuggestions(AvailabilityRequest request) {
+        return buildAvailability(request).suggestions();
     }
 
     private List<String> buildDateSpecificSuggestions(AvailabilityRequest request, List<AvailabilitySlot> slots) {
@@ -183,5 +197,20 @@ public class AvailabilityContextProvider {
     }
 
     private record AvailabilityWindow(LocalDate day, LocalTime start, LocalTime end) {
+    }
+
+    public record AvailabilityLookupResult(List<String> suggestions, boolean failed, String failureReason) {
+
+        static AvailabilityLookupResult empty() {
+            return new AvailabilityLookupResult(List.of(), false, null);
+        }
+
+        static AvailabilityLookupResult success(List<String> suggestions) {
+            return new AvailabilityLookupResult(suggestions == null ? List.of() : suggestions, false, null);
+        }
+
+        static AvailabilityLookupResult failed(String reason) {
+            return new AvailabilityLookupResult(List.of(), true, reason);
+        }
     }
 }

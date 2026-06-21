@@ -41,35 +41,29 @@ Variables relacionadas:
 - `BEAUTY_BOT_AI_DECISION_ENABLED`
 - `BEAUTY_BOT_AI_DECISION_FALLBACK_ENABLED`
 - `BEAUTY_BOT_AI_DECISION_PROMPT_ID`
-- `BEAUTY_BOT_AI_REPLY_PROMPT_ID`
 
 ### 2.1 Prompt templates (mandar reglas una sola vez)
 
-Si queres evitar enviar `instructions` en cada request, usa Prompt Templates de OpenAI.
+Si la decision por IA esta habilitada, el Prompt Template de OpenAI es obligatorio. Ahi viven las reglas, el formato JSON, estados e intents permitidos.
 
 1. Crear prompt template para decision conversacional.
-2. Crear prompt template para redaccion final.
-   - Referencias listas para copiar:
-     - [docs/prompts/AI_DECISION_PROMPT_TEMPLATE.md](prompts/AI_DECISION_PROMPT_TEMPLATE.md)
-     - [docs/prompts/AI_REPLY_PROMPT_TEMPLATE.md](prompts/AI_REPLY_PROMPT_TEMPLATE.md)
-3. Configurar IDs en variables de entorno:
+2. Usar como referencia lista para copiar:
+   - [docs/prompts/AI_DECISION_PROMPT_TEMPLATE.md](prompts/AI_DECISION_PROMPT_TEMPLATE.md)
+3. Configurar ID en variables de entorno:
 
 ```powershell
 $env:BEAUTY_BOT_AI_DECISION_PROMPT_ID="pmpt_xxx"
-$env:BEAUTY_BOT_AI_REPLY_PROMPT_ID="pmpt_yyy"
 ```
 
 Opcional version fija:
 
 ```powershell
-$env:BEAUTY_BOT_AI_DECISION_PROMPT_VERSION="1"
-$env:BEAUTY_BOT_AI_REPLY_PROMPT_VERSION="1"
+$env:BEAUTY_BOT_AI_DECISION_PROMPT_VERSION="v4"
 ```
 
 Variables que el backend inyecta en cada request:
 
 - Prompt de decision: `{{conversation_context}}`
-- Prompt de reply: `{{reply_context}}`
 
 Opcional para cache extendida:
 
@@ -77,9 +71,9 @@ Opcional para cache extendida:
 $env:BEAUTY_BOT_AI_PROMPT_CACHE_RETENTION="24h"
 ```
 
-Si no seteas estos IDs, el backend mantiene el comportamiento actual de fallback y manda `instructions` inline.
+Si no seteas `BEAUTY_BOT_AI_DECISION_PROMPT_ID` y la decision por IA esta activa, el backend reporta error de configuracion de IA y no usa fallback rule-based para ocultarlo.
 
-Con prompt template configurado, el payload de decision se reduce a contexto dinamico (mensaje actual, historial, estado de sesion, disponibilidad).
+El payload de decision se reduce a contexto dinamico: clinica, capacidades activas, mensaje actual, historial, estado de sesion y disponibilidad calculada.
 
 ## 3) Meta Developers / WhatsApp Cloud API
 
@@ -112,7 +106,13 @@ $env:WHATSAPP_ACCESS_TOKEN="tu_access_token"
 $env:WHATSAPP_APP_SECRET="tu_app_secret"
 $env:WHATSAPP_PHONE_NUMBER_ID="tu_phone_number_id"
 $env:WHATSAPP_BASE_URL="https://graph.facebook.com/v25.0"
+$env:BEAUTY_BOT_ADVISOR_NOTIFICATION_PHONE_NUMBER="54911XXXXXXXX"
 ```
+
+Notas:
+
+- `WHATSAPP_APP_SECRET` es obligatorio cuando WhatsApp esta habilitado. Sin ese valor, el webhook rechaza eventos entrantes porque no puede validar `X-Hub-Signature-256`.
+- `BEAUTY_BOT_ADVISOR_NOTIFICATION_PHONE_NUMBER` es obligatorio si `BEAUTY_BOT_ADVISOR_NOTIFICATION_ENABLED=true`; se usa para notificar por WhatsApp cuando un lead pasa a asesora.
 
 ## 4) Google Calendar (Gmail + Google Cloud)
 
@@ -181,8 +181,16 @@ Grupos principales:
 - `beauty-bot.whatsapp.*`
 - `beauty-bot.calendar.*`
 - `beauty-bot.bot-capabilities.*`
+- `beauty-bot.security.*`
 
 Revisar ejemplo completo en `.env.example`.
+
+Para produccion, mantener protegidos endpoints internos:
+
+```powershell
+$env:BEAUTY_BOT_INTERNAL_API_KEY_ENABLED="true"
+$env:BEAUTY_BOT_INTERNAL_API_KEY="Bearer token_interno_largo"
+```
 
 ## 6) Prueba local end-to-end
 
@@ -242,6 +250,8 @@ Revisar:
 - `GOOGLE_SERVICE_ACCOUNT_JSON_BASE64` valido
 - `BEAUTY_BOT_CALENDAR_ENABLED=true`
 - `BEAUTY_BOT_CAN_CHECK_AVAILABILITY=true`
+
+Si Google Calendar esta configurado pero falla la consulta de disponibilidad, el backend deriva la conversacion a una asesora para evitar ofrecer horarios inventados.
 
 ### Maven toma Java 8
 

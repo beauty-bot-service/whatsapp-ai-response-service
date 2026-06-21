@@ -22,57 +22,51 @@ public class LeadCollectionReplyFactory {
     public String askFor(RequiredField field, ConversationSession session) {
         if (field == RequiredField.NAME) {
             return random(List.of(
-                    "Perfecto. Indica tu nombre para registrar la consulta.",
-                    "Por favor, indica tu nombre para dejar el registro.",
-                    "Necesito tu nombre para continuar con la gestion de la consulta."
+                    "Perfecto. Me pasas tu nombre completo para dejarlo registrado?",
+                    "Dale. A nombre de quien dejamos la consulta?",
+                    "Bien. Decime tu nombre completo y lo dejo asentado para la asesora."
             ));
         }
         if (field == RequiredField.FIRST_TIME) {
             return random(List.of(
-                    "Perfecto. Es tu primera vez en la clinica?",
-                    "Para registrarlo correctamente, confirma si es tu primera vez en la clinica?",
-                    "Confirma por favor si ya eres paciente de la clinica o si es tu primera consulta?"
+                    "Perfecto. Es tu primera vez en Dr.Beauty?",
+                    "Bien. Ya te atendiste antes con nosotros o seria tu primera vez?",
+                    "Dale. Te consulto, seria tu primera consulta en la clinica?"
             ));
         }
         if (field == RequiredField.PREFERRED_TIME) {
             return askPreferredTime(session);
         }
         return random(List.of(
-                "Hola. Te ayudo con la gestion de tu consulta. Que tratamiento te interesa?",
-                "Hola. Para continuar, indica que tratamiento te interesa consultar.",
-                "Hola. Indica que tratamiento deseas consultar y te acompano con la gestion."
+                "Hola, como andas? Contame que tratamiento te interesa y te ayudo.",
+                "Hola. Dale, te ayudo. Que tratamiento estas buscando?",
+                "Hola, gracias por escribir. Contame que tratamiento te interesa."
         ));
     }
 
     public String readyForHuman(ConversationSession session) {
-        String firstTimeText = Boolean.TRUE.equals(session.getFirstTime())
-                ? "que es tu primera consulta en la clinica"
-                : "que ya eres paciente de la clinica";
         return random(List.of(
-                "Perfecto" + nameSuffix(session) + ". Registro que deseas consultar por "
-                        + session.getTreatmentInterest() + ", " + firstTimeText
-                        + " y que prefieres " + session.getPreferredTime() + ". Una asesora te contactara para continuar.",
-                "Listo" + nameSuffix(session) + ". Queda registrado que te interesa "
-                        + session.getTreatmentInterest() + ", " + firstTimeText
-                        + " y que te resulta conveniente " + session.getPreferredTime() + ". Una asesora te contactara para coordinar.",
-                "Registro completo" + nameSuffix(session) + ". Queda cargado que consultas por "
-                        + session.getTreatmentInterest() + ", " + firstTimeText
-                        + " y con preferencia " + session.getPreferredTime() + ". Una asesora te escribira para avanzar."
+                "Perfecto" + nameSuffix(session) + ". Dejo tu consulta registrada para que una asesora revise la agenda y te escriba para coordinar.",
+                "Listo" + nameSuffix(session) + ". Queda cargada tu consulta y una asesora te va a contactar para avanzar.",
+                "Perfecto" + nameSuffix(session) + ". Ya dejo los datos para que una asesora continue con la coordinacion."
         ));
     }
 
     private String askPreferredTime(ConversationSession session) {
+        String firstTimePrefix = Boolean.TRUE.equals(session.getFirstTime())
+                ? "Al ser tu primera vez, podemos contemplar una consulta previa para que te saques dudas. "
+                : "";
         List<AvailabilitySlot> slots = calendarAvailabilityService.findNextAvailableSlots(3);
         if (!slots.isEmpty()) {
-            return "Gracias" + nameSuffix(session)
-                    + ". Tengo disponibilidad en "
+            return firstTimePrefix
+                    + "Te puedo ofrecer "
                     + formatSlots(slots)
-                    + ". Indica si alguno de esos horarios te sirve o comparti otra preferencia.";
+                    + ". Te queda comodo alguno de esos horarios?";
         }
         return random(List.of(
-                "Gracias" + nameSuffix(session) + ". Indica un dia u horario de preferencia. Si lo deseas, una asesora puede contactarte para coordinar.",
-                "Gracias" + nameSuffix(session) + ". Cual es tu disponibilidad horaria para la consulta?",
-                "Para completar el registro, indicanos que dia u horario te resulta mas conveniente."
+                firstTimePrefix + "Gracias" + nameSuffix(session) + ". Que dia u horario te queda comodo?",
+                firstTimePrefix + "Dale" + nameSuffix(session) + ". Contame que disponibilidad horaria tenes para la consulta.",
+                firstTimePrefix + "Perfecto" + nameSuffix(session) + ". Que momento te resulta mas conveniente?"
         ));
     }
 

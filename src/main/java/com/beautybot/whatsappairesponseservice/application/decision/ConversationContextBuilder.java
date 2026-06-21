@@ -3,7 +3,6 @@ package com.beautybot.whatsappairesponseservice.application.decision;
 import com.beautybot.whatsappairesponseservice.application.decision.context.AvailabilityContextProvider;
 import com.beautybot.whatsappairesponseservice.application.decision.context.BotCapabilitiesFactory;
 import com.beautybot.whatsappairesponseservice.application.decision.context.ClinicContextFactory;
-import com.beautybot.whatsappairesponseservice.application.decision.context.DecisionRulesProvider;
 import com.beautybot.whatsappairesponseservice.application.decision.context.RecentMessageContextProvider;
 import com.beautybot.whatsappairesponseservice.calendar.AvailabilityRequest;
 import com.beautybot.whatsappairesponseservice.conversation.decision.ConversationContext;
@@ -23,11 +22,11 @@ public class ConversationContextBuilder {
     private final BotCapabilitiesFactory botCapabilitiesFactory;
     private final RecentMessageContextProvider recentMessageContextProvider;
     private final AvailabilityContextProvider availabilityContextProvider;
-    private final DecisionRulesProvider decisionRulesProvider;
 
     public ConversationContext build(ConversationSession session, ChatMessage currentMessage) {
         List<RecentConversationMessage> recentMessages = recentMessageContextProvider.findRecentMessages(session.getId());
         AvailabilityRequest availabilityRequest = availabilityContextProvider.parseRequest(currentMessage.getMessage());
+        AvailabilityContextProvider.AvailabilityLookupResult availability = availabilityContextProvider.buildAvailability(availabilityRequest);
 
         return ConversationContext.builder()
                 .clinic(clinicContextFactory.build())
@@ -36,13 +35,10 @@ public class ConversationContextBuilder {
                 .currentMessage(currentMessage)
                 .lastBotMessage(recentMessageContextProvider.findLastBotMessage(recentMessages))
                 .recentMessages(recentMessages)
-                .allowedStates(decisionRulesProvider.allowedStates())
-                .allowedIntents(decisionRulesProvider.allowedIntents())
-                .requiredLeadFields(decisionRulesProvider.requiredLeadFields())
                 .availabilityRequest(availabilityContextProvider.nullableRequest(availabilityRequest))
-                .availabilitySuggestions(availabilityContextProvider.buildSuggestions(availabilityRequest))
-                .mandatoryRules(decisionRulesProvider.mandatoryRules())
-                .allowedWaitingFields(decisionRulesProvider.allowedWaitingFields())
+                .availabilitySuggestions(availability.suggestions())
+                .availabilityLookupFailed(availability.failed())
+                .availabilityFailureReason(availability.failureReason())
                 .build();
     }
 }

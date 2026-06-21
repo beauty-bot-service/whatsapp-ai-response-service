@@ -43,15 +43,8 @@ public class RuleBasedConversationDecisionService implements ConversationDecisio
             return responseService.handoffToHuman(session, analysis);
         }
 
-        boolean hasInformationalIntent = hasInformationalIntent(analysis);
-        boolean hasAppointmentIntent = analysis.hasIntent(Intent.APPOINTMENT_REQUEST);
-
-        if (hasInformationalIntent && !hasAppointmentIntent) {
-            return responseService.answerInformational(analysis);
-        }
-
         ConversationDecision collectionDecision = resolveLeadCollection(session, analysis);
-        if (hasInformationalIntent) {
+        if (hasInformationalIntent(analysis)) {
             ConversationDecision informationalDecision = responseService.answerInformational(analysis);
             return responseService.mergeReplies(collectionDecision, informationalDecision.getReply());
         }
@@ -88,6 +81,7 @@ public class RuleBasedConversationDecisionService implements ConversationDecisio
     private boolean hasInformationalIntent(MessageAnalysis analysis) {
         return analysis.hasIntent(Intent.LOCATION_QUESTION)
                 || analysis.hasIntent(Intent.OPENING_HOURS_QUESTION)
+                || analysis.hasIntent(Intent.TREATMENT_INFO)
                 || analysis.hasIntent(Intent.PRICE_QUESTION)
                 || analysis.hasIntent(Intent.AVAILABILITY_QUESTION);
     }

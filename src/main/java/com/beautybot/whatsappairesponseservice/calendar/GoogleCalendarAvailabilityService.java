@@ -52,7 +52,7 @@ public class GoogleCalendarAvailabilityService implements CalendarAvailabilitySe
 
         CalendarQueryConfig config = resolveQueryConfig();
         if (config == null) {
-            return List.of();
+            throw new CalendarAvailabilityException("Google Calendar configuration is invalid.");
         }
 
         ZonedDateTime searchStart = ZonedDateTime.now(config.zoneId()).plusMinutes(config.minimumNoticeMinutes());
@@ -83,7 +83,7 @@ public class GoogleCalendarAvailabilityService implements CalendarAvailabilitySe
 
         CalendarQueryConfig config = resolveQueryConfig();
         if (config == null) {
-            return List.of();
+            throw new CalendarAvailabilityException("Google Calendar configuration is invalid.");
         }
 
         LocalDate requestedDate = request.requestedDate();
@@ -185,7 +185,7 @@ public class GoogleCalendarAvailabilityService implements CalendarAvailabilitySe
         String calendarId = properties.getCalendar().getGoogle().getCalendarId();
         String accessToken = fetchAccessToken();
         if (!hasText(accessToken)) {
-            return List.of();
+            throw new CalendarAvailabilityException("Google Calendar access token could not be obtained.");
         }
 
         try {
@@ -210,7 +210,7 @@ public class GoogleCalendarAvailabilityService implements CalendarAvailabilitySe
                     ? null
                     : response.path("calendars").path(calendarId).path("busy");
             if (busyArray == null || !busyArray.isArray()) {
-                return List.of();
+                throw new CalendarAvailabilityException("Google Calendar freeBusy response is invalid.");
             }
 
             List<BusyInterval> intervals = new ArrayList<>();
@@ -225,7 +225,7 @@ public class GoogleCalendarAvailabilityService implements CalendarAvailabilitySe
             return mergeOverlappingBusyIntervals(intervals);
         } catch (Exception e) {
             log.warn("Google Calendar freeBusy query failed. Cause: {}", e.getMessage());
-            return List.of();
+            throw new CalendarAvailabilityException("Google Calendar freeBusy query failed.", e);
         }
     }
 

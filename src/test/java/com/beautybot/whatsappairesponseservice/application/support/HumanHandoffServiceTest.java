@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class HumanHandoffServiceTest {
@@ -63,6 +64,7 @@ class HumanHandoffServiceTest {
                 .nextState(ConversationState.READY_FOR_HUMAN)
                 .requiresHuman(true)
                 .build();
+        when(humanNotificationService.notifyAdvisor(session)).thenReturn(true);
 
         humanHandoffService.notifyAdvisorIfTransitioned(ConversationState.COLLECTING_DATA, decision, session);
 
@@ -80,6 +82,7 @@ class HumanHandoffServiceTest {
                 .nextState(ConversationState.HUMAN_HANDOFF)
                 .requiresHuman(true)
                 .build();
+        when(humanNotificationService.notifyAdvisor(session)).thenReturn(true);
 
         humanHandoffService.notifyAdvisorIfTransitioned(ConversationState.COLLECTING_DATA, decision, session);
 
@@ -117,5 +120,23 @@ class HumanHandoffServiceTest {
         humanHandoffService.notifyAdvisorIfTransitioned(ConversationState.COLLECTING_DATA, decision, session);
 
         verifyNoInteractions(humanNotificationService, conversationService);
+    }
+
+    @Test
+    void doesNotMarkNotifiedWhenAdvisorNotificationFails() {
+        ConversationSession session = ConversationSession.builder()
+                .state(ConversationState.COLLECTING_DATA)
+                .humanNotifiedAt(null)
+                .build();
+        ConversationDecision decision = ConversationDecision.builder()
+                .nextState(ConversationState.READY_FOR_HUMAN)
+                .requiresHuman(true)
+                .build();
+        when(humanNotificationService.notifyAdvisor(session)).thenReturn(false);
+
+        humanHandoffService.notifyAdvisorIfTransitioned(ConversationState.COLLECTING_DATA, decision, session);
+
+        verify(humanNotificationService).notifyAdvisor(session);
+        verifyNoInteractions(conversationService);
     }
 }

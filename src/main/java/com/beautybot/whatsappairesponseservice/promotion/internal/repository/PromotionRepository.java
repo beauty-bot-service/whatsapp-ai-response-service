@@ -21,15 +21,30 @@ public interface PromotionRepository extends JpaRepository<PromotionEntity, Long
 
     boolean existsByClinicIdAndCodeAndIdNot(Long clinicId, String code, Long id);
 
+    Page<PromotionEntity> findByClinicId(Long clinicId, Pageable pageable);
+
+    Page<PromotionEntity> findByClinicIdAndStatus(Long clinicId, PromotionStatus status, Pageable pageable);
+
     @Query("""
             select p from PromotionModulePromotion p
             where p.clinicId = :clinicId
-              and (:status is null or p.status = :status)
-              and (:query is null
-                   or lower(p.code) like lower(concat('%', :query, '%'))
+              and (lower(p.code) like lower(concat('%', :query, '%'))
                    or lower(p.title) like lower(concat('%', :query, '%')))
             """)
-    Page<PromotionEntity> search(
+    Page<PromotionEntity> searchByQuery(
+            @Param("clinicId") Long clinicId,
+            @Param("query") String query,
+            Pageable pageable
+    );
+
+    @Query("""
+            select p from PromotionModulePromotion p
+            where p.clinicId = :clinicId
+              and p.status = :status
+              and (lower(p.code) like lower(concat('%', :query, '%'))
+                   or lower(p.title) like lower(concat('%', :query, '%')))
+            """)
+    Page<PromotionEntity> searchByStatusAndQuery(
             @Param("clinicId") Long clinicId,
             @Param("status") PromotionStatus status,
             @Param("query") String query,

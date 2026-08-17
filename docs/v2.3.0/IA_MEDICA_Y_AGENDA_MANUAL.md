@@ -23,6 +23,8 @@ Para agenda, el bot:
 
 ## Properties para Railway
 
+La configuracion completa y actual, lista para cargar en Railway, esta en [Railway properties 2.3.1](../v2.3.1/RAILWAY_PROPERTIES.md). El bloque siguiente contiene solamente las dos variables introducidas por esta funcionalidad.
+
 Agregar o actualizar estas variables en el servicio del backend:
 
 ```dotenv

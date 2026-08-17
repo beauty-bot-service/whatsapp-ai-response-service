@@ -48,8 +48,24 @@ class PromotionManagementService implements PromotionManagement {
         requireClinicId(clinicId);
         String normalizedQuery = hasText(query) ? query.trim() : null;
         Instant now = clock.instant();
-        return promotionRepository.search(clinicId, status, normalizedQuery, pageable)
+        return searchEntities(clinicId, status, normalizedQuery, pageable)
                 .map(entity -> promotionMapper.toView(entity, now));
+    }
+
+    private Page<PromotionEntity> searchEntities(
+            Long clinicId,
+            PromotionStatus status,
+            String query,
+            Pageable pageable
+    ) {
+        if (query == null) {
+            return status == null
+                    ? promotionRepository.findByClinicId(clinicId, pageable)
+                    : promotionRepository.findByClinicIdAndStatus(clinicId, status, pageable);
+        }
+        return status == null
+                ? promotionRepository.searchByQuery(clinicId, query, pageable)
+                : promotionRepository.searchByStatusAndQuery(clinicId, status, query, pageable);
     }
 
     @Override

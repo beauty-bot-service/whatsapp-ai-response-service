@@ -75,10 +75,31 @@ class AdminSecurityIntegrationTest {
                 .andExpect(jsonPath("$.code").value("botox-test"))
                 .andExpect(jsonPath("$.status").value("DRAFT"));
 
-        mockMvc.perform(get("/api/admin/promotions")
+        JsonNode created = objectMapper.readTree(mockMvc.perform(get("/api/admin/promotions")
                         .session(session))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[?(@.code == 'botox-test')]").exists());
+                .andReturn()
+                .getResponse()
+                .getContentAsByteArray()).get("content").get(0);
+
+        mockMvc.perform(post("/api/admin/promotions/" + created.get("id").asLong() + "/activate")
+                        .session(session)
+                        .cookie(authenticatedCsrf.cookie())
+                        .header(authenticatedCsrf.headerName(), authenticatedCsrf.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":" + created.get("version").asLong() + "}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ACTIVE"));
+
+        mockMvc.perform(get("/api/admin/promotions")
+                        .queryParam("page", "0")
+                        .queryParam("size", "100")
+                        .queryParam("sort", "updatedAt,desc")
+                        .queryParam("status", "ACTIVE")
+                        .session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[?(@.code == 'botox-test')]").exists())
+                .andExpect(jsonPath("$.content[?(@.code == 'botox-test')].currentlyActive").value(true));
     }
 
     private CsrfCredentials requestCsrf(MockHttpSession session) throws Exception {

@@ -2,7 +2,7 @@
 
 ## Control de cambios y versiones
 
-Este es el archivo central de control de versiones del proyecto. Cada entrega debe agregar una fila y enlazar su documento operativo sin borrar el historial anterior. La version actual es `2.3.0`.
+Este es el archivo central de control de versiones del proyecto. Cada entrega debe agregar una fila y enlazar su documento operativo sin borrar el historial anterior. La version actual es `2.3.2`.
 
 | Version | Cambio principal | Documento |
 |---|---|---|
@@ -12,6 +12,8 @@ Este es el archivo central de control de versiones del proyecto. Cada entrega de
 | `2.2.0` | Una entrega de cada promocion por conversacion | [Regla de entrega](../v2.2.0/PROMOCIONES_UNA_VEZ_POR_CONVERSACION.md) |
 | `2.2.1` | SQL y operacion de las tablas de promociones | [SQL y verificacion](../v2.2.1/PROMOCIONES_UNA_VEZ_POR_CONVERSACION.md) |
 | `2.3.0` | Informacion general de tratamientos y agenda manual | [IA medica y agenda manual](../v2.3.0/IA_MEDICA_Y_AGENDA_MANUAL.md) |
+| `2.3.1` | Properties completas para Railway | [Railway properties](../v2.3.1/RAILWAY_PROPERTIES.md) |
+| `2.3.2` | Correccion de listado de promociones en PostgreSQL | [Fix listado PostgreSQL](../v2.3.2/PROMOTION_LIST_POSTGRES_FIX.md) |
 
 ---
 

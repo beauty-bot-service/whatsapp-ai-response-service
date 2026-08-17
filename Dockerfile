@@ -1,4 +1,13 @@
-FROM maven:3.9.8-eclipse-temurin-21 AS build
+FROM node:24-alpine AS frontend-build
+WORKDIR /app/admin-web
+
+COPY admin-web/package.json admin-web/package-lock.json ./
+RUN npm ci
+
+COPY admin-web/ ./
+RUN npm run build
+
+FROM maven:3.9.8-eclipse-temurin-21 AS backend-build
 WORKDIR /app
 
 ARG GITHUB_USERNAME
@@ -24,12 +33,13 @@ COPY pom.xml ./
 RUN mvn -q -s /root/.m2/settings.xml -DskipTests dependency:go-offline
 
 COPY src ./src
+COPY --from=frontend-build /app/admin-web/dist ./src/main/resources/static
 RUN mvn -q -s /root/.m2/settings.xml -DskipTests package
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=backend-build /app/target/*.jar app.jar
 
 ENV JAVA_OPTS=""
 EXPOSE 8080

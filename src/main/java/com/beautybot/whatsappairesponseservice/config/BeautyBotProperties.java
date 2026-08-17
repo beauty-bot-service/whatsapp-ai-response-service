@@ -11,9 +11,11 @@ import java.util.List;
 @ConfigurationProperties(prefix = "beauty-bot")
 public class BeautyBotProperties {
 
+    private Long clinicId = 1L;
     private String clinicName;
     private String location;
     private String openingHours;
+    private String attendingDoctor = "la doctora asignada";
     private boolean advisorNotificationEnabled;
     private String advisorNotificationPhoneNumber;
     /**

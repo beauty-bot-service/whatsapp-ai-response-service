@@ -15,7 +15,7 @@ Objetivo del MVP:
 - Spring Boot 3.3.5
 - PostgreSQL (deploy) / H2 en memoria (fallback local)
 - Decision conversacional por IA (opcional) con Prompt Template obligatorio y fallback rule-based
-- Consulta de disponibilidad con Google Calendar (opcional)
+- Registro de fecha preferida sin consultar ni confirmar disponibilidad
 - Dockerfile multi-stage
 - MapStruct para mapeos entre capas
 
@@ -82,6 +82,7 @@ El `Dockerfile` ya fue adaptado para usar esas variables y generar `/root/.m2/se
 
 ## Documentacion de configuracion
 
+- Documentacion para cliente no tecnico: [docs/DOCUMENTACION_CLIENTE.md](docs/DOCUMENTACION_CLIENTE.md)
 - Guia completa paso a paso: [docs/CONFIGURACION_COMPLETA.md](docs/CONFIGURACION_COMPLETA.md)
 - Variables de entorno de referencia: [.env.example](.env.example)
 - Template de IA:
@@ -234,38 +235,16 @@ POST /whatsapp-ai-response-service/v1/whatsapp/webhook
 POST /whatsapp-ai-response-service/v1/whatsapp/test/send
 ```
 
-## Disponibilidad con Google Calendar
+## Horarios y fecha preferida
 
-El bot puede consultar disponibilidad real y sugerir proximos slots cuando:
-
-- `beauty-bot.bot-capabilities.can-check-availability=true`
-- `beauty-bot.calendar.enabled=true`
-- hay credenciales validas de Google Calendar
-
-Variables de entorno recomendadas:
+Desde `2.3.0` el bot no consulta Google Calendar ni ofrece disponibilidad. Informa los datos configurados y registra una preferencia para que una asesora coordine manualmente:
 
 ```text
-BEAUTY_BOT_CAN_CHECK_AVAILABILITY=true
-BEAUTY_BOT_CALENDAR_ENABLED=true
-BEAUTY_BOT_CALENDAR_TIME_ZONE=America/Argentina/Buenos_Aires
-BEAUTY_BOT_CALENDAR_LOOKAHEAD_DAYS=14
-BEAUTY_BOT_CALENDAR_SLOT_DURATION_MINUTES=30
-BEAUTY_BOT_CALENDAR_MINIMUM_NOTICE_MINUTES=120
-BEAUTY_BOT_CALENDAR_MAX_SUGGESTIONS=3
-BEAUTY_BOT_CALENDAR_WORKING_START=09:00
-BEAUTY_BOT_CALENDAR_WORKING_END=18:00
-BEAUTY_BOT_CALENDAR_WORKING_DAYS=MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY
-GOOGLE_CALENDAR_ID=<calendar_id>
-GOOGLE_SERVICE_ACCOUNT_JSON_BASE64=<service_account_json_en_base64>
+BEAUTY_BOT_OPENING_HOURS=Lunes a viernes de 9 a 18 hs
+BEAUTY_BOT_ATTENDING_DOCTOR=Dra. Nombre Apellido
 ```
 
-Notas:
-
-1. Crear una service account en Google Cloud y habilitar Google Calendar API.
-2. Compartir el calendario con el email de la service account con permiso de lectura.
-3. Usar `GOOGLE_SERVICE_ACCOUNT_JSON_BASE64` (recomendado) para evitar problemas de formato multiline.
-4. Esta version sugiere disponibilidad, pero no confirma ni crea turnos en agenda automaticamente.
-5. Si Google Calendar falla al consultar disponibilidad, el bot deriva la conversacion a una asesora.
+Cuando el lead llega al ultimo dato, pregunta que fecha prefiere. Esa fecha no representa una reserva ni una confirmacion de turno.
 
 ## Integracion con WhatsApp Cloud API
 
@@ -320,6 +299,16 @@ Content-Type: application/json
 }
 ```
 
+## Deploy unificado en Railway
+
+El `Dockerfile` raíz construye el panel React y el backend Spring Boot en una sola imagen. En Railway se despliega un único servicio web junto con PostgreSQL; el panel queda disponible en:
+
+```text
+https://<dominio>/whatsapp-ai-response-service/v1/
+```
+
+La guía completa, incluidas las referencias a variables de PostgreSQL y el checklist de prueba, está en [`docs/v2.1.0/RAILWAY_DEPLOY.md`](docs/v2.1.0/RAILWAY_DEPLOY.md).
+
 ## Primer Deploy (Railway o Render)
 
 ### 1) Build con Docker
@@ -353,10 +342,8 @@ WHATSAPP_PHONE_NUMBER_ID=...
 BEAUTY_BOT_INTERNAL_API_KEY_ENABLED=true
 BEAUTY_BOT_INTERNAL_API_KEY=...
 BEAUTY_BOT_ADVISOR_NOTIFICATION_PHONE_NUMBER=...
-BEAUTY_BOT_CAN_CHECK_AVAILABILITY=true|false
-BEAUTY_BOT_CALENDAR_ENABLED=true|false
-GOOGLE_CALENDAR_ID=...
-GOOGLE_SERVICE_ACCOUNT_JSON_BASE64=...
+BEAUTY_BOT_OPENING_HOURS=...
+BEAUTY_BOT_ATTENDING_DOCTOR=...
 ```
 
 ### 4) Railway (resumen)

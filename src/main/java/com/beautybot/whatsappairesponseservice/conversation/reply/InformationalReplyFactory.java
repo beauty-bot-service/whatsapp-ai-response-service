@@ -31,9 +31,9 @@ public class InformationalReplyFactory {
         }
         if (analysis.hasIntent(Intent.OPENING_HOURS_QUESTION)) {
             parts.add(random(List.of(
-                    "Atendemos " + properties.getOpeningHours() + ".",
-                    "El horario de atencion es " + properties.getOpeningHours() + ".",
-                    "Nuestros horarios de atencion son " + properties.getOpeningHours() + "."
+                    "Atendemos " + properties.getOpeningHours() + " con " + properties.getAttendingDoctor() + ".",
+                    "El horario de atencion es " + properties.getOpeningHours() + " y atiende " + properties.getAttendingDoctor() + ".",
+                    "Nuestros horarios de atencion son " + properties.getOpeningHours() + ". Atiende " + properties.getAttendingDoctor() + "."
             )));
         }
         if (analysis.hasIntent(Intent.TREATMENT_INFO)) {
@@ -43,7 +43,7 @@ public class InformationalReplyFactory {
             parts.add(random(List.of(
                     "Los valores y promos los valida una asesora segun el tratamiento y la forma de pago.",
                     "Para pasarte valores exactos, una asesora revisa la promo vigente y la forma de pago.",
-                    "Los precios se confirman con la promo vigente y el tratamiento que quieras realizar."
+                    "Los precios los confirma una asesora con la promo vigente y el tratamiento que quieras realizar."
             )));
         }
         if (analysis.hasIntent(Intent.AVAILABILITY_QUESTION)) {

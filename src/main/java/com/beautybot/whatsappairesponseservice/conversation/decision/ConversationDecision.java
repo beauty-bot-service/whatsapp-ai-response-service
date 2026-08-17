@@ -30,6 +30,9 @@ public class ConversationDecision {
     @Builder.Default
     private List<String> missingFields = new ArrayList<>();
 
+    @Builder.Default
+    private List<String> matchedPromotionCodes = new ArrayList<>();
+
     private Boolean requiresHuman;
     private Boolean shouldCreateLead;
     private Boolean shouldNotifyHuman;

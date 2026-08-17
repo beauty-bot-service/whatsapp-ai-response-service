@@ -1,23 +1,19 @@
 package com.beautybot.whatsappairesponseservice.conversation.reply;
 
-import com.beautybot.whatsappairesponseservice.calendar.AvailabilitySlot;
-import com.beautybot.whatsappairesponseservice.calendar.CalendarAvailabilityService;
+import com.beautybot.whatsappairesponseservice.config.BeautyBotProperties;
 import com.beautybot.whatsappairesponseservice.conversation.model.ConversationSession;
 import com.beautybot.whatsappairesponseservice.conversation.state.RequiredField;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Component
 @RequiredArgsConstructor
 public class LeadCollectionReplyFactory {
 
-    private final CalendarAvailabilityService calendarAvailabilityService;
+    private final BeautyBotProperties properties;
 
     public String askFor(RequiredField field, ConversationSession session) {
         if (field == RequiredField.NAME) {
@@ -56,42 +52,13 @@ public class LeadCollectionReplyFactory {
         String firstTimePrefix = Boolean.TRUE.equals(session.getFirstTime())
                 ? "Al ser tu primera vez, podemos contemplar una consulta previa para que te saques dudas. "
                 : "";
-        List<AvailabilitySlot> slots = calendarAvailabilityService.findNextAvailableSlots(3);
-        if (!slots.isEmpty()) {
-            return firstTimePrefix
-                    + "Te puedo ofrecer "
-                    + formatSlots(slots)
-                    + ". Te queda comodo alguno de esos horarios?";
-        }
+        String attentionDetails = "Atendemos " + properties.getOpeningHours()
+                + " y atiende " + properties.getAttendingDoctor() + ". ";
         return random(List.of(
-                firstTimePrefix + "Gracias" + nameSuffix(session) + ". Que dia u horario te queda comodo?",
-                firstTimePrefix + "Dale" + nameSuffix(session) + ". Contame que disponibilidad horaria tenes para la consulta.",
-                firstTimePrefix + "Perfecto" + nameSuffix(session) + ". Que momento te resulta mas conveniente?"
+                firstTimePrefix + attentionDetails + "Gracias" + nameSuffix(session) + ". Que fecha preferis para dejarla registrada?",
+                firstTimePrefix + attentionDetails + "Dale" + nameSuffix(session) + ". Decime que fecha te queda mejor y una asesora la revisa.",
+                firstTimePrefix + attentionDetails + "Perfecto" + nameSuffix(session) + ". Que fecha de preferencia queres que anotemos?"
         ));
-    }
-
-    private String formatSlots(List<AvailabilitySlot> slots) {
-        Locale locale = Locale.forLanguageTag("es-AR");
-        DateTimeFormatter dayFormatter = DateTimeFormatter.ofPattern("EEE dd/MM", locale);
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm", locale);
-        DateTimeFormatter fallbackFormatter = DateTimeFormatter.ofPattern("EEE dd/MM HH:mm", locale);
-        LocalDate firstDate = slots.getFirst().start().toLocalDate();
-        boolean sameDay = slots.stream().allMatch(slot -> slot.start().toLocalDate().equals(firstDate));
-        if (sameDay) {
-            String day = slots.getFirst().start().format(dayFormatter).toLowerCase(Locale.ROOT);
-            List<String> times = slots.stream().map(slot -> slot.start().format(timeFormatter)).toList();
-            return day + " a las " + joinReadable(times);
-        }
-        return joinReadable(slots.stream()
-                .map(slot -> slot.start().format(fallbackFormatter).toLowerCase(Locale.ROOT))
-                .toList());
-    }
-
-    private String joinReadable(List<String> items) {
-        if (items.isEmpty()) return "";
-        if (items.size() == 1) return items.getFirst();
-        if (items.size() == 2) return items.get(0) + " y " + items.get(1);
-        return String.join(", ", items.subList(0, items.size() - 1)) + " y " + items.getLast();
     }
 
     private String nameSuffix(ConversationSession session) {

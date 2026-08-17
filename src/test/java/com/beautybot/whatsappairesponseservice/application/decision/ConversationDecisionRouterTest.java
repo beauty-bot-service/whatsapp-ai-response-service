@@ -10,12 +10,13 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class ConversationDecisionRouterTest {
 
     @Test
-    void routesToHumanWhenAvailabilityLookupFailed() {
+    void ignoresLegacyCalendarFailureAndUsesConversationEngine() {
         AiConversationDecisionService aiService = mock(AiConversationDecisionService.class);
         RuleBasedConversationDecisionService ruleBasedService = mock(RuleBasedConversationDecisionService.class);
         ConversationDecisionRouter router = new ConversationDecisionRouter(
@@ -34,14 +35,17 @@ class ConversationDecisionRouterTest {
                 .availabilityLookupFailed(true)
                 .availabilityFailureReason("freeBusy failed")
                 .build();
+        ConversationDecision ruleBasedDecision = ConversationDecision.builder()
+                .nextState(ConversationState.COLLECTING_DATA)
+                .shouldBotReply(true)
+                .reply("Indica la fecha que preferis")
+                .build();
+        when(ruleBasedService.decide(context)).thenReturn(ruleBasedDecision);
 
         ConversationDecision decision = router.decide(context);
 
-        assertThat(decision.getNextState()).isEqualTo(ConversationState.HUMAN_HANDOFF);
-        assertThat(decision.getRequiresHuman()).isTrue();
-        assertThat(decision.getShouldNotifyHuman()).isTrue();
+        assertThat(decision.getNextState()).isEqualTo(ConversationState.COLLECTING_DATA);
         assertThat(decision.getShouldBotReply()).isTrue();
-        assertThat(decision.getReply()).contains("Derivo tu consulta");
-        verifyNoInteractions(aiService, ruleBasedService);
+        verify(ruleBasedService).decide(context);
     }
 }

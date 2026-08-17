@@ -128,8 +128,7 @@ public class AiConversationDecisionService implements ConversationDecisionServic
         payload.put("lastUserMessage", context.getCurrentMessage() == null ? null : context.getCurrentMessage().getMessage());
         payload.put("lastBotMessage", context.getLastBotMessage());
         payload.put("recentMessages", context.getRecentMessages());
-        payload.put("availabilityRequest", context.getAvailabilityRequest());
-        payload.put("availabilitySuggestions", context.getAvailabilitySuggestions());
+        payload.put("activePromotions", context.getActivePromotions());
         return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(payload);
     }
 

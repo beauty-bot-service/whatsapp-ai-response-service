@@ -5,9 +5,11 @@ import com.beautybot.whatsappairesponseservice.application.decision.Conversation
 import com.beautybot.whatsappairesponseservice.application.decision.ConversationDecisionRouter;
 import com.beautybot.whatsappairesponseservice.application.decision.ConversationDecisionValidator;
 import com.beautybot.whatsappairesponseservice.application.support.ChatMessageValidator;
+import com.beautybot.whatsappairesponseservice.application.support.ClinicIdProvider;
 import com.beautybot.whatsappairesponseservice.application.support.ConversationMessageHistoryService;
 import com.beautybot.whatsappairesponseservice.application.support.HumanHandoffService;
 import com.beautybot.whatsappairesponseservice.application.support.InboundMessageNormalizer;
+import com.beautybot.whatsappairesponseservice.application.promotion.ConversationPromotionPolicy;
 import com.beautybot.whatsappairesponseservice.conversation.decision.ConversationContext;
 import com.beautybot.whatsappairesponseservice.conversation.decision.ConversationDecision;
 import com.beautybot.whatsappairesponseservice.conversation.lock.ConversationDatabaseLockService;
@@ -45,6 +47,8 @@ public class HandleIncomingMessageUseCase implements ChatService {
     private final ConversationContextBuilder conversationContextBuilder;
     private final ConversationDecisionRouter conversationDecisionRouter;
     private final ConversationDecisionValidator conversationDecisionValidator;
+    private final ConversationPromotionPolicy conversationPromotionPolicy;
+    private final ClinicIdProvider clinicIdProvider;
     private final TransactionTemplate transactionTemplate;
     private final BeautyBotMetrics metrics;
     private final ConversationDatabaseLockService conversationDatabaseLockService;
@@ -90,9 +94,17 @@ public class HandleIncomingMessageUseCase implements ChatService {
         }
 
         ConversationContext context = conversationContextBuilder.build(session, normalizedRequest);
-        ConversationDecision decision = conversationDecisionRouter.decide(context);
+        ConversationDecision routedDecision = conversationDecisionRouter.decide(context);
 
-        return transactionTemplate.execute(status -> applyDecisionAndPersistResult(session, decision));
+        return transactionTemplate.execute(status -> {
+            conversationDatabaseLockService.lockPhoneNumber(normalizedRequest.getPhoneNumber());
+            ConversationDecision decision = conversationPromotionPolicy.enrich(
+                    clinicIdProvider.currentClinicId(),
+                    context,
+                    routedDecision
+            );
+            return applyDecisionAndPersistResult(session, decision);
+        });
     }
 
     private InboundProcessingResult persistInbound(ChatMessage normalizedRequest) {
@@ -134,7 +146,7 @@ public class HandleIncomingMessageUseCase implements ChatService {
     private void safeUpsertLead(ConversationSession session, ConversationDecision decision) {
         try {
             leadService.upsertFromConversation(LeadUpsertRequest.builder()
-                    .clinicId(resolveClinicId(session))
+                    .clinicId(clinicIdProvider.currentClinicId())
                     .conversationSessionId(session.getId())
                     .phoneNumber(session.getPhoneNumber())
                     .customerName(session.getCustomerName())
@@ -155,11 +167,6 @@ public class HandleIncomingMessageUseCase implements ChatService {
                     e
             );
         }
-    }
-
-    private Long resolveClinicId(ConversationSession session) {
-        // TODO replace with real clinic id when multi-tenant is implemented.
-        return 1L;
     }
 
     private boolean isReadyForHuman(ConversationDecision decision) {
@@ -195,6 +202,7 @@ public class HandleIncomingMessageUseCase implements ChatService {
         metadata.put("intents", decision.getIntents());
         metadata.put("nextState", decision.getNextState());
         metadata.put("decisionSource", decision.getSource());
+        metadata.put("matchedPromotionCodes", decision.getMatchedPromotionCodes());
         try {
             return objectMapper.writeValueAsString(metadata);
         } catch (JsonProcessingException e) {

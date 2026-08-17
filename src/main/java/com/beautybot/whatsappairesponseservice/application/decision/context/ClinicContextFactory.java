@@ -16,8 +16,10 @@ public class ClinicContextFactory {
                 .name(properties.getClinicName())
                 .location(properties.getLocation())
                 .openingHours(properties.getOpeningHours())
+                .attendingDoctor(properties.getAttendingDoctor())
                 .pricePolicy("Los precios pueden depender de la evaluacion profesional, tratamiento, zona y cantidad de sesiones.")
-                .treatmentPolicy("El bot puede dar informacion general, pero no debe diagnosticar ni recomendar tratamientos medicos personalizados.")
+                .treatmentPolicy("El bot puede explicar tratamientos de forma general y breve, pero no debe diagnosticar, evaluar riesgos ni recomendar tratamientos personalizados. Las consultas clinicas, profundas o serias se derivan a una persona.")
+                .schedulingPolicy("Informar dias, horarios y profesional de atencion. Pedir una fecha de preferencia para registrar el lead, sin consultar, ofrecer ni confirmar disponibilidad de calendario.")
                 .build();
     }
 }

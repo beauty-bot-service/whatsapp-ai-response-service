@@ -1,5 +1,7 @@
 # Configuracion Completa
 
+> Nota desde `2.3.0`: la integracion con Google Calendar queda fuera del flujo conversacional. Las secciones historicas de Calendar que aparecen mas abajo no deben configurarse para esta version. Usar `BEAUTY_BOT_OPENING_HOURS` y `BEAUTY_BOT_ATTENDING_DOCTOR`; el bot registra una fecha preferida y una asesora coordina manualmente.
+
 Guia operativa de todo lo configurado para este proyecto:
 
 - OpenAI

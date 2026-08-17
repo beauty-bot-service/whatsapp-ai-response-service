@@ -31,13 +31,6 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
     );
     private static final Pattern DATE_PATTERN = Pattern.compile("\\b\\d{1,2}[/-]\\d{1,2}(?:[/-]\\d{2,4})?\\b");
 
-    private static final List<String> MEDICAL_TERMS = List.of(
-            "me conviene", "que me recomendas", "que me recomiendas", "riesgo", "riesgos",
-            "diagnostico", "dolor", "embarazada", "medicacion", "enfermedad", "apto", "apta",
-            "hematoma", "alergia", "alergias", "contraindicacion", "contraindicaciones",
-            "post tratamiento", "postratamiento", "complicacion", "complicaciones"
-    );
-
     private static final List<String> MEDIA_REQUEST_TERMS = List.of(
             "foto", "fotos", "imagen", "imagenes", "video", "videos", "multimedia",
             "trabajos", "resultados", "antes y despues", "ejemplos"
@@ -74,7 +67,8 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
     );
 
     private static final List<String> OPENING_HOURS_TERMS = List.of(
-            "horario", "horarios", "abren", "cierran", "atienden"
+            "horario", "horarios", "abren", "cierran", "atiende", "atienden",
+            "doctora", "doctor", "profesional"
     );
 
     private static final List<String> AVAILABILITY_TERMS = List.of(
@@ -88,6 +82,7 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
     );
 
     private static final List<String> TREATMENT_INFO_TERMS = List.of(
+            "que es", "de que se trata", "como funciona", "para que sirve", "en que consiste",
             "jeringa", "media jeringa", "jeringa completa", "completa", "marca", "marcas",
             "dura", "demora", "tiempo demora", "cuanto tiempo", "incluye", "retoque",
             "control", "procedimiento"
@@ -124,7 +119,7 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
         boolean contactPreferenceReply = waitingForField == RequiredField.PREFERRED_TIME
                 && containsAny(normalizedMessage, CONTACT_ME_TERMS);
 
-        boolean medicalQuestion = containsAny(normalizedMessage, MEDICAL_TERMS);
+        boolean medicalQuestion = MedicalQuestionClassifier.requiresHuman(message);
         boolean mediaRequest = containsAny(normalizedMessage, MEDIA_REQUEST_TERMS);
         boolean administrativeHuman = containsAny(normalizedMessage, ADMINISTRATIVE_HUMAN_TERMS);
         boolean wantsHuman = !contactPreferenceReply

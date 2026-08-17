@@ -3,7 +3,9 @@ package com.beautybot.whatsappairesponseservice.application.usecase;
 import com.beautybot.whatsappairesponseservice.application.decision.ConversationContextBuilder;
 import com.beautybot.whatsappairesponseservice.application.decision.ConversationDecisionRouter;
 import com.beautybot.whatsappairesponseservice.application.decision.ConversationDecisionValidator;
+import com.beautybot.whatsappairesponseservice.application.promotion.ConversationPromotionPolicy;
 import com.beautybot.whatsappairesponseservice.application.support.ChatMessageValidator;
+import com.beautybot.whatsappairesponseservice.application.support.ClinicIdProvider;
 import com.beautybot.whatsappairesponseservice.application.support.ConversationMessageHistoryService;
 import com.beautybot.whatsappairesponseservice.application.support.HumanHandoffService;
 import com.beautybot.whatsappairesponseservice.application.support.InboundMessageNormalizer;
@@ -65,6 +67,10 @@ class HandleIncomingMessageUseCaseTest {
     @Mock
     private ConversationDecisionValidator conversationDecisionValidator;
     @Mock
+    private ConversationPromotionPolicy conversationPromotionPolicy;
+    @Mock
+    private ClinicIdProvider clinicIdProvider;
+    @Mock
     private TransactionTemplate transactionTemplate;
     @Mock
     private BeautyBotMetrics metrics;
@@ -86,6 +92,9 @@ class HandleIncomingMessageUseCaseTest {
             consumer.accept(null);
             return null;
         }).when(transactionTemplate).executeWithoutResult(any());
+        lenient().when(clinicIdProvider.currentClinicId()).thenReturn(1L);
+        lenient().when(conversationPromotionPolicy.enrich(any(), any(), any()))
+                .thenAnswer(invocation -> invocation.getArgument(2));
     }
 
     private HandleIncomingMessageUseCase useCase() {
@@ -99,6 +108,8 @@ class HandleIncomingMessageUseCaseTest {
                 conversationContextBuilder,
                 conversationDecisionRouter,
                 conversationDecisionValidator,
+                conversationPromotionPolicy,
+                clinicIdProvider,
                 transactionTemplate,
                 metrics,
                 conversationDatabaseLockService,

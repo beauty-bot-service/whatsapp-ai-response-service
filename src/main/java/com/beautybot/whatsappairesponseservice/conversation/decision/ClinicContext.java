@@ -9,6 +9,8 @@ public class ClinicContext {
     private String name;
     private String location;
     private String openingHours;
+    private String attendingDoctor;
     private String pricePolicy;
     private String treatmentPolicy;
+    private String schedulingPolicy;
 }

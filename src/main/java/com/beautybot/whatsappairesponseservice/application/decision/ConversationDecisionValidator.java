@@ -1,5 +1,6 @@
 package com.beautybot.whatsappairesponseservice.application.decision;
 
+import com.beautybot.whatsappairesponseservice.ai.MedicalQuestionClassifier;
 import com.beautybot.whatsappairesponseservice.conversation.decision.ConversationContext;
 import com.beautybot.whatsappairesponseservice.conversation.decision.ConversationDecision;
 import com.beautybot.whatsappairesponseservice.conversation.decision.ExtractedConversationData;
@@ -34,6 +35,8 @@ public class ConversationDecisionValidator {
         if (decision.getNextState() == null) {
             decision.setNextState(ConversationState.COLLECTING_DATA);
         }
+
+        enforceMedicalHandoff(decision, context);
 
         boolean humanState = isHumanState(decision.getNextState());
         if (humanState) {
@@ -91,6 +94,30 @@ public class ConversationDecisionValidator {
         }
 
         return decision;
+    }
+
+    private void enforceMedicalHandoff(ConversationDecision decision, ConversationContext context) {
+        String currentMessage = context == null || context.getCurrentMessage() == null
+                ? null
+                : context.getCurrentMessage().getMessage();
+        boolean medicalIntent = decision.getIntents().contains(Intent.MEDICAL_QUESTION);
+        if (!medicalIntent && !MedicalQuestionClassifier.requiresHuman(currentMessage)) {
+            return;
+        }
+        if (!medicalIntent) {
+            List<Intent> correctedIntents = new ArrayList<>(decision.getIntents());
+            correctedIntents.addFirst(Intent.MEDICAL_QUESTION);
+            decision.setIntents(correctedIntents);
+        }
+        decision.setNextState(ConversationState.HUMAN_HANDOFF);
+        decision.setNextWaitingForField(null);
+        decision.setRequiresHuman(true);
+        decision.setShouldCreateLead(false);
+        decision.setShouldNotifyHuman(true);
+        decision.setShouldBotReply(true);
+        decision.setReply("Para responderte con seguridad segun tu caso, derivo esta consulta con una profesional del equipo.");
+        decision.setDecisionReason(appendReason(decision.getDecisionReason(),
+                "Backend forced human handoff for a medical question."));
     }
 
     public boolean hasEnoughLeadData(ConversationSession session, ConversationDecision decision) {

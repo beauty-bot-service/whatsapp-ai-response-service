@@ -93,6 +93,36 @@ class RuleBasedMessageAnalyzerTest {
     }
 
     @Test
+    void recognizesQuestionAboutAttendingDoctorAsOfficeInformation() {
+        ConversationSession session = ConversationSession.builder().build();
+
+        MessageAnalysis analysis = analyzer.analyze("Que doctora atiende?", session);
+
+        assertThat(analysis.getIntents()).contains(Intent.OPENING_HOURS_QUESTION);
+    }
+
+    @Test
+    void classifiesHighLevelTreatmentQuestionAsGeneralInformation() {
+        ConversationSession session = ConversationSession.builder().build();
+
+        MessageAnalysis analysis = analyzer.analyze("Que es el botox y para que sirve?", session);
+
+        assertThat(analysis.getIntents()).contains(Intent.TREATMENT_INFO);
+        assertThat(analysis.getIntents()).doesNotContain(Intent.MEDICAL_QUESTION);
+        assertThat(analysis.getTreatment()).isEqualTo("Botox");
+    }
+
+    @Test
+    void keepsRiskQuestionClassifiedAsMedical() {
+        ConversationSession session = ConversationSession.builder().build();
+
+        MessageAnalysis analysis = analyzer.analyze("Que riesgos tiene el botox si estoy embarazada?", session);
+
+        assertThat(analysis.getIntents()).contains(Intent.MEDICAL_QUESTION);
+        assertThat(analysis.getMedicalQuestion()).isTrue();
+    }
+
+    @Test
     void extractsPreferredTimeWhenWaitingAndMessageContainsDateAndTime() {
         ConversationSession session = ConversationSession.builder()
                 .waitingForField(RequiredField.PREFERRED_TIME)

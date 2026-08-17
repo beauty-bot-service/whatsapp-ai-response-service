@@ -5,15 +5,10 @@ import com.beautybot.whatsappairesponseservice.application.exception.ResponseCod
 import com.beautybot.whatsappairesponseservice.config.BeautyBotProperties;
 import com.beautybot.whatsappairesponseservice.conversation.decision.ConversationContext;
 import com.beautybot.whatsappairesponseservice.conversation.decision.ConversationDecision;
-import com.beautybot.whatsappairesponseservice.conversation.decision.ExtractedConversationData;
 import com.beautybot.whatsappairesponseservice.observability.BeautyBotMetrics;
-import com.beautybot.whatsappairesponseservice.conversation.state.ConversationState;
-import com.beautybot.whatsappairesponseservice.conversation.state.Intent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Slf4j
 @Service
@@ -27,10 +22,6 @@ public class ConversationDecisionRouter {
     private final BeautyBotMetrics metrics;
 
     public ConversationDecision decide(ConversationContext context) {
-        if (context != null && context.isAvailabilityLookupFailed()) {
-            return decisionValidator.validateAndFix(calendarFailureHandoffDecision(context), context);
-        }
-
         if (isAiDecisionEnabled()) {
             try {
                 ConversationDecision aiDecision = aiConversationDecisionService.decide(context);
@@ -67,22 +58,6 @@ public class ConversationDecisionRouter {
     private boolean isConfigurationError(Exception exception) {
         return exception instanceof AppException appException
                 && appException.getResponseCode() == ResponseCode.AI_DECISION_CONFIGURATION_ERROR;
-    }
-
-    private ConversationDecision calendarFailureHandoffDecision(ConversationContext context) {
-        return ConversationDecision.builder()
-                .intents(List.of(Intent.AVAILABILITY_QUESTION))
-                .nextState(ConversationState.HUMAN_HANDOFF)
-                .nextWaitingForField(null)
-                .extractedData(ExtractedConversationData.builder().build())
-                .requiresHuman(true)
-                .shouldCreateLead(false)
-                .shouldNotifyHuman(true)
-                .shouldBotReply(true)
-                .reply("En este momento no puedo consultar la disponibilidad de agenda. Derivo tu consulta con una asesora para continuar con la coordinacion.")
-                .summaryForHuman("No se pudo consultar disponibilidad de Google Calendar. Revisar agenda manualmente y responder al cliente.")
-                .decisionReason("Google Calendar availability lookup failed: " + context.getAvailabilityFailureReason())
-                .build();
     }
 
 }

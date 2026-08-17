@@ -1,8 +1,6 @@
 package com.beautybot.whatsappairesponseservice.application.decision;
 
 import com.beautybot.whatsappairesponseservice.ai.RuleBasedMessageAnalyzer;
-import com.beautybot.whatsappairesponseservice.calendar.AvailabilitySlot;
-import com.beautybot.whatsappairesponseservice.calendar.CalendarAvailabilityService;
 import com.beautybot.whatsappairesponseservice.config.BeautyBotProperties;
 import com.beautybot.whatsappairesponseservice.conversation.decision.ConversationContext;
 import com.beautybot.whatsappairesponseservice.conversation.decision.ConversationDecision;
@@ -20,8 +18,6 @@ import com.beautybot.whatsappairesponseservice.conversation.resolver.MissingData
 import com.beautybot.whatsappairesponseservice.conversation.state.ConversationState;
 import com.beautybot.whatsappairesponseservice.conversation.state.RequiredField;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -82,27 +78,12 @@ class RuleBasedConversationDecisionServiceTest {
         BeautyBotProperties properties = new BeautyBotProperties();
         properties.setLocation("Jose Roque Funes 1723");
         properties.setOpeningHours("lunes a viernes de 9 a 18 hs");
+        properties.setAttendingDoctor("Dra. Test");
 
-        CalendarAvailabilityService calendarAvailabilityService = new CalendarAvailabilityService() {
-            @Override
-            public List<AvailabilitySlot> findNextAvailableSlots(int maxSlots) {
-                return List.of();
-            }
-
-            @Override
-            public boolean isConfigured() {
-                return false;
-            }
-        };
-
-        AvailabilityReplyFactory availabilityReplyFactory = new AvailabilityReplyFactory(
-                properties,
-                calendarAvailabilityService,
-                new com.beautybot.whatsappairesponseservice.calendar.AvailabilityRequestParser()
-        );
+        AvailabilityReplyFactory availabilityReplyFactory = new AvailabilityReplyFactory(properties);
         BotResponseService responseService = new BotResponseService(
                 new HandoffReplyFactory(),
-                new LeadCollectionReplyFactory(calendarAvailabilityService),
+                new LeadCollectionReplyFactory(properties),
                 new InformationalReplyFactory(properties, availabilityReplyFactory),
                 new HumanSummaryFactory(),
                 new ReplyStyleNormalizer()

@@ -2,6 +2,11 @@ server:
   port: ${PORT:8081}
   servlet:
     context-path: /whatsapp-ai-response-service/v1
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${BEAUTY_BOT_ADMIN_SECURE_COOKIE:false}
 
 spring:
   application:
@@ -25,23 +30,29 @@ spring:
           time_zone: UTC
 
 beauty-bot:
+  clinic-id: ${BEAUTY_BOT_CLINIC_ID:1}
   clinic-name: ${BEAUTY_BOT_CLINIC_NAME:Doctor Beauty}
   location: ${BEAUTY_BOT_LOCATION:Cochabamba 427}
   opening-hours: ${BEAUTY_BOT_OPENING_HOURS:Lunes a viernes de 9 a 18 hs}
+  attending-doctor: ${BEAUTY_BOT_ATTENDING_DOCTOR:la doctora asignada}
   advisor-notification-enabled: ${BEAUTY_BOT_ADVISOR_NOTIFICATION_ENABLED:true}
   advisor-notification-phone-number: ${BEAUTY_BOT_ADVISOR_NOTIFICATION_PHONE_NUMBER:}
   test-endpoints-enabled: ${BEAUTY_BOT_TEST_ENDPOINTS_ENABLED:false}
+  admin:
+    enabled: ${BEAUTY_BOT_ADMIN_ENABLED:true}
+    bootstrap-email: ${BEAUTY_BOT_ADMIN_BOOTSTRAP_EMAIL:}
+    bootstrap-password: ${BEAUTY_BOT_ADMIN_BOOTSTRAP_PASSWORD:}
   bot-capabilities:
     can-collect-lead-data: true
     can-notify-human: true
     can-confirm-appointment: false
-    can-check-availability: ${BEAUTY_BOT_CAN_CHECK_AVAILABILITY:true}
+    can-check-availability: false
     can-give-exact-prices: false
     can-provide-medical-advice: false
     can-cancel-appointments: false
     can-reschedule-appointments: false
   calendar:
-    enabled: ${BEAUTY_BOT_CALENDAR_ENABLED:true}
+    enabled: false
     time-zone: ${BEAUTY_BOT_CALENDAR_TIME_ZONE:America/Argentina/Buenos_Aires}
     lookahead-days: ${BEAUTY_BOT_CALENDAR_LOOKAHEAD_DAYS:14}
     slot-duration-minutes: ${BEAUTY_BOT_CALENDAR_SLOT_DURATION_MINUTES:30}

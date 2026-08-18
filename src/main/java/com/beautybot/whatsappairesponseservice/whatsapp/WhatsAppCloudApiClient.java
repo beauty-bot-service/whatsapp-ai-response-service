@@ -4,6 +4,9 @@ import com.beautybot.whatsappairesponseservice.config.BeautyBotProperties;
 import com.beautybot.whatsappairesponseservice.config.RestClientFactory;
 import com.beautybot.whatsappairesponseservice.external.ExternalCallResultClassifier;
 import com.beautybot.whatsappairesponseservice.observability.BeautyBotMetrics;
+import com.beautybot.whatsappairesponseservice.observability.PhoneNumberMasker;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -12,6 +15,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -25,6 +29,8 @@ public class WhatsAppCloudApiClient {
     private final RestClientFactory restClientFactory;
     private final ExternalCallResultClassifier externalCallResultClassifier;
     private final BeautyBotMetrics metrics;
+    private final PhoneNumberMasker phoneNumberMasker;
+    private final ObjectMapper objectMapper;
 
     public WhatsAppSendResult sendTextMessage(String toPhoneNumber, String body) {
         BeautyBotProperties.Whatsapp whatsapp = properties.getWhatsapp();
@@ -43,20 +49,27 @@ public class WhatsAppCloudApiClient {
 
         try {
             RestClient restClient = restClientFactory.whatsappClient(whatsapp);
+            Map<String, Object> payload = buildTextMessagePayload(toPhoneNumber, body);
+
+            log.info("Sending outbound WhatsApp message. to={}", phoneNumberMasker.mask(toPhoneNumber));
+            if (whatsapp.isLogPayloads()) {
+                log.info("Outbound WhatsApp API payload. payload={}", toJson(payload));
+            }
 
             restClient.post()
                     .uri("/{phoneNumberId}/messages", whatsapp.getPhoneNumberId())
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
-                    .body(buildTextMessagePayload(toPhoneNumber, body))
+                    .body(payload)
                     .retrieve()
                     .toBodilessEntity();
             metrics.externalCall("whatsapp", "success");
+            log.info("Outbound WhatsApp API request accepted. to={}", phoneNumberMasker.mask(toPhoneNumber));
             return WhatsAppSendResult.SENT;
         } catch (Exception e) {
             String result = externalCallResultClassifier.classify(e);
             metrics.externalCall("whatsapp", result);
-            log.warn("Failed to send outbound WhatsApp message. result={}, cause={}", result, e.getMessage());
+            logSendFailure(toPhoneNumber, result, e);
             return toWhatsAppSendResult(e, result);
         }
     }
@@ -109,9 +122,28 @@ public class WhatsAppCloudApiClient {
         return payload;
     }
 
+    private void logSendFailure(String toPhoneNumber, String result, Exception exception) {
+        if (exception instanceof RestClientResponseException responseException) {
+            log.warn("Failed to send outbound WhatsApp message. to={}, result={}, httpStatus={}, metaResponse={}",
+                    phoneNumberMasker.mask(toPhoneNumber), result, responseException.getStatusCode().value(),
+                    responseException.getResponseBodyAsString());
+            return;
+        }
+        log.warn("Failed to send outbound WhatsApp message. to={}, result={}, exceptionType={}, cause={}",
+                phoneNumberMasker.mask(toPhoneNumber), result, exception.getClass().getSimpleName(),
+                exception.getMessage(), exception);
+    }
+
+    private String toJson(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException ex) {
+            return "{\"serializationError\":\"payload could not be serialized\"}";
+        }
+    }
+
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
     }
 }
-
 

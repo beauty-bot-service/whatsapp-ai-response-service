@@ -242,6 +242,11 @@ public class BeautyBotProperties {
         private boolean enabled = false;
 
         /**
+         * Registra payloads completos para diagnostico. Puede contener datos personales y debe permanecer apagado normalmente.
+         */
+        private boolean logPayloads = false;
+
+        /**
          * Token para la verificacion del webhook (hub.verify_token).
          */
         private String verifyToken;

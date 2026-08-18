@@ -44,7 +44,13 @@ public class WhatsAppWebhookService {
 
     @Async("webhookTaskExecutor")
     public void processWebhookAsync(String rawPayload) {
-        processWebhook(rawPayload);
+        try {
+            processWebhook(rawPayload);
+        } catch (Exception ex) {
+            metrics.inboundMessage(CHANNEL_WHATSAPP, "async_failed");
+            log.error("Critical: unhandled error processing WhatsApp webhook asynchronously. cause={}",
+                    ex.getMessage(), ex);
+        }
     }
 
     public int processWebhook(String rawPayload) {
@@ -59,6 +65,8 @@ public class WhatsAppWebhookService {
 
         List<WhatsAppInboundMessage> inboundMessages = webhookParser.extractInboundMessages(payload);
         for (WhatsAppInboundMessage inbound : inboundMessages) {
+            log.info("Inbound WhatsApp message received. messageId={}, from={}",
+                    inbound.getMessageId(), phoneNumberMasker.mask(inbound.getFromPhone()));
             ChatMessage request = ChatMessage.builder()
                     .phoneNumber(inbound.getFromPhone())
                     .message(inbound.getTextBody())
@@ -71,6 +79,9 @@ public class WhatsAppWebhookService {
                     ChatResult response = chatService.handleMessage(request);
                     metrics.inboundMessage(CHANNEL_WHATSAPP, response != null && response.getReply() == null ? "processed_no_reply" : "processed");
                     if (response != null && response.getSession() != null && !isBlank(response.getReply())) {
+                        log.info("Dispatching WhatsApp reply. inboundMessageId={}, sessionId={}, to={}",
+                                inbound.getMessageId(), response.getSession().getId(),
+                                phoneNumberMasker.mask(response.getSession().getPhoneNumber()));
                         var outbound = outboundMessageService.sendBotReply(response.getSession(), response.getReply());
                         if (outbound.getStatus() == OutboundMessageStatus.FAILED) {
                             log.warn("Outbound WhatsApp reply persisted as FAILED. outboundId={}, sessionId={}, from={}, reason={}",

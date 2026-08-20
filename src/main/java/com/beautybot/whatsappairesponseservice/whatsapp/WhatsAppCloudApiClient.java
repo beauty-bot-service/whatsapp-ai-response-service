@@ -30,6 +30,7 @@ public class WhatsAppCloudApiClient {
     private final ExternalCallResultClassifier externalCallResultClassifier;
     private final BeautyBotMetrics metrics;
     private final PhoneNumberMasker phoneNumberMasker;
+    private final WhatsAppRecipientPhoneNormalizer recipientPhoneNormalizer;
     private final ObjectMapper objectMapper;
 
     public WhatsAppSendResult sendTextMessage(String toPhoneNumber, String body) {
@@ -49,9 +50,10 @@ public class WhatsAppCloudApiClient {
 
         try {
             RestClient restClient = restClientFactory.whatsappClient(whatsapp);
-            Map<String, Object> payload = buildTextMessagePayload(toPhoneNumber, body);
+            String recipientPhoneNumber = recipientPhoneNormalizer.normalize(toPhoneNumber);
+            Map<String, Object> payload = buildTextMessagePayload(recipientPhoneNumber, body);
 
-            log.info("Sending outbound WhatsApp message. to={}", phoneNumberMasker.mask(toPhoneNumber));
+            log.info("Sending outbound WhatsApp message. to={}", phoneNumberMasker.mask(recipientPhoneNumber));
             if (whatsapp.isLogPayloads()) {
                 log.info("Outbound WhatsApp API payload. payload={}", toJson(payload));
             }
@@ -64,7 +66,7 @@ public class WhatsAppCloudApiClient {
                     .retrieve()
                     .toBodilessEntity();
             metrics.externalCall("whatsapp", "success");
-            log.info("Outbound WhatsApp API request accepted. to={}", phoneNumberMasker.mask(toPhoneNumber));
+            log.info("Outbound WhatsApp API request accepted. to={}", phoneNumberMasker.mask(recipientPhoneNumber));
             return WhatsAppSendResult.SENT;
         } catch (Exception e) {
             String result = externalCallResultClassifier.classify(e);
@@ -146,4 +148,3 @@ public class WhatsAppCloudApiClient {
         return value == null || value.isBlank();
     }
 }
-

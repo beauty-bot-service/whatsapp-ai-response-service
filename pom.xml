@@ -13,7 +13,7 @@
 
     <groupId>com.example</groupId>
     <artifactId>whatsapp-ai-response-service</artifactId>
-    <version>2.4.1</version>
+    <version>2.4.2</version>
     <name>whatsapp-ai-response-service</name>
     <description>MVP bot de WhatsApp para turnos de clinica estetica</description>
 

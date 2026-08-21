@@ -120,25 +120,58 @@ class ConversationPromotionPolicyTest {
 
     @Test
     void keepsNormalReplyWhenPromotionWasAlreadyDelivered() {
-        ConversationContext context = context(ConversationSession.builder().id(7L).build(), "Cual es el precio del botox?");
+        ConversationContext context = context(ConversationSession.builder().id(7L).build(), "Quiero mas informacion sobre botox");
         ConversationDecision decision = ConversationDecision.builder()
-                .intents(List.of(Intent.PRICE_QUESTION))
-                .source(DecisionSource.RULE_BASED)
-                .reply("Una asesora puede confirmarte el precio actualizado.")
+                .intents(List.of(Intent.TREATMENT_INFO))
+                .source(DecisionSource.AI)
+                .matchedPromotionCodes(List.of("botox"))
+                .reply("El tratamiento se realiza luego de una evaluacion profesional.")
                 .shouldBotReply(true)
                 .nextState(ConversationState.COLLECTING_DATA)
                 .build();
         List<PromotionContent> match = List.of(
                 new PromotionContent(1L, "botox", "Botox", "PROMO BOTOX")
         );
-        when(promotionCatalog.match(1L, "Cual es el precio del botox?")).thenReturn(match);
+        when(promotionCatalog.findActiveByCodes(1L, List.of("botox"))).thenReturn(match);
         when(promotionDeliveryRegistry.filterUndelivered(7L, match)).thenReturn(List.of());
 
         ConversationDecision result = policy.enrich(1L, context, decision);
 
-        assertThat(result.getReply()).isEqualTo("Una asesora puede confirmarte el precio actualizado.");
+        assertThat(result.getReply()).isEqualTo(
+                "El tratamiento se realiza luego de una evaluacion profesional."
+        );
         assertThat(result.getMatchedPromotionCodes()).isEmpty();
+        verify(promotionCatalog, never()).match(anyLong(), anyString());
         verify(promotionDeliveryRegistry, never()).recordDelivered(anyLong(), anyList());
+    }
+
+    @Test
+    void sendsAllPromotionsSelectedByAiForEarlyCommercialInterest() {
+        ConversationSession session = ConversationSession.builder().id(8L).build();
+        ConversationContext context = context(session, "Quiero averiguar por botox e hilos");
+        ConversationDecision decision = ConversationDecision.builder()
+                .intents(List.of(Intent.TREATMENT_INFO))
+                .source(DecisionSource.AI)
+                .matchedPromotionCodes(List.of("botox", "hilos"))
+                .nextState(ConversationState.COLLECTING_DATA)
+                .nextWaitingForField(RequiredField.NAME)
+                .shouldBotReply(true)
+                .build();
+        List<PromotionContent> promotions = List.of(
+                new PromotionContent(1L, "botox", "Botox", "PROMO BOTOX"),
+                new PromotionContent(2L, "hilos", "Hilos", "PROMO HILOS")
+        );
+        when(promotionCatalog.findActiveByCodes(1L, List.of("botox", "hilos"))).thenReturn(promotions);
+        when(leadCollectionReplyFactory.askFor(RequiredField.NAME, session)).thenReturn("Me pasas tu nombre?");
+
+        ConversationDecision result = policy.enrich(1L, context, decision);
+
+        assertThat(result.getReply()).isEqualTo(
+                "PROMO BOTOX\n\nPROMO HILOS\n\nMe pasas tu nombre?"
+        );
+        assertThat(result.getMatchedPromotionCodes()).containsExactly("botox", "hilos");
+        verify(promotionDeliveryRegistry).recordDelivered(8L, promotions);
+        verify(promotionCatalog, never()).match(anyLong(), anyString());
     }
 
     @Test

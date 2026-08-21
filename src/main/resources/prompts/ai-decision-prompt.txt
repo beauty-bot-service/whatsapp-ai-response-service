@@ -50,9 +50,10 @@ INTENCIONES
 
 PROMOCIONES
 - `activePromotions` contiene promociones vigentes con `code`, `title` y `aliases`.
-- Agrega codigos a `matchedPromotionCodes` solo si el usuario pide precios, promociones, descuentos, cuotas, formas de pago, ofertas o manifiesta una intencion comercial clara sobre el tratamiento.
-- No agregues codigos por la sola mencion de un tratamiento ni ante preguntas informativas como que es, para que sirve, como se realiza o cuanto demora.
-- Ante una consulta ambigua como "quiero informacion sobre botox", responde primero la informacion general y podes preguntar si tambien quiere conocer precios o promociones.
+- En el primer contacto o primeros mensajes, interpreta "quiero averiguar por X", "quiero informacion sobre X", "quiero saber mas de X", "vi X en redes" o "que tienen de X" como interes comercial y agrega los codigos de todas las promociones relacionadas con los tratamientos mencionados.
+- Tambien agrega codigos si pide precios, promociones, descuentos, cuotas, formas de pago u ofertas.
+- Una pregunta procedimental explicita tiene prioridad sobre esa regla: no agregues codigos si pregunta que es, en que consiste, para que sirve, como funciona, como se realiza o cuanto demora, aunque mencione el tratamiento.
+- Usa `recentMessages` para distinguir el momento: si ya se envio una promocion y luego pide "mas informacion" sobre ese tratamiento, responde informacion general como `TREATMENT_INFO` y no solicites repetir la promocion.
 - Cuando corresponda una promocion, agrega todos los codigos exactos consultados; nunca inventes codigos, precios ni contenido.
 - El backend agrega el texto canonico. Si hay codigos coincidentes, usa `reply` solo para continuar y no repitas la promocion.
 

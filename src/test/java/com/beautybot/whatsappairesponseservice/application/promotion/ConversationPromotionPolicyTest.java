@@ -3,11 +3,13 @@ package com.beautybot.whatsappairesponseservice.application.promotion;
 import com.beautybot.whatsappairesponseservice.conversation.decision.ConversationContext;
 import com.beautybot.whatsappairesponseservice.conversation.decision.ConversationDecision;
 import com.beautybot.whatsappairesponseservice.conversation.decision.DecisionSource;
+import com.beautybot.whatsappairesponseservice.conversation.decision.RecentConversationMessage;
 import com.beautybot.whatsappairesponseservice.conversation.model.ChatMessage;
 import com.beautybot.whatsappairesponseservice.conversation.model.ConversationSession;
 import com.beautybot.whatsappairesponseservice.conversation.reply.LeadCollectionReplyFactory;
 import com.beautybot.whatsappairesponseservice.conversation.state.ConversationState;
 import com.beautybot.whatsappairesponseservice.conversation.state.Intent;
+import com.beautybot.whatsappairesponseservice.conversation.state.MessageDirection;
 import com.beautybot.whatsappairesponseservice.conversation.state.RequiredField;
 import com.beautybot.whatsappairesponseservice.promotion.PromotionCatalog;
 import com.beautybot.whatsappairesponseservice.promotion.PromotionContent;
@@ -15,6 +17,8 @@ import com.beautybot.whatsappairesponseservice.promotion.PromotionDeliveryRegist
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -219,10 +223,99 @@ class ConversationPromotionPolicyTest {
         verify(promotionCatalog, never()).match(anyLong(), anyString());
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "Quiero información sobre botox",
+            "Quiero saber más de botox",
+            "Me interesa botox",
+            "Lo vi en Instagram, quiero botox"
+    })
+    void matchesPromotionForGeneralInterestDuringFirstCustomerMessages(String message) {
+        ConversationContext context = context(
+                ConversationSession.builder().id(13L).build(),
+                message,
+                List.of(inbound(message))
+        );
+        ConversationDecision decision = ConversationDecision.builder()
+                .intents(List.of(Intent.TREATMENT_INFO))
+                .source(DecisionSource.AI)
+                .reply("Te cuento sobre el tratamiento.")
+                .shouldBotReply(true)
+                .nextState(ConversationState.COLLECTING_DATA)
+                .build();
+        PromotionContent promotion = new PromotionContent(1L, "botox", "Botox", "PROMO BOTOX");
+        when(promotionCatalog.match(1L, message)).thenReturn(List.of(promotion));
+
+        ConversationDecision result = policy.enrich(1L, context, decision);
+
+        assertThat(result.getReply()).isEqualTo("PROMO BOTOX");
+        assertThat(result.getMatchedPromotionCodes()).containsExactly("botox");
+    }
+
+    @Test
+    void proceduralQuestionOverridesGeneralInterestPhrase() {
+        String message = "Quiero saber mas: en que consiste el botox?";
+        ConversationContext context = context(
+                ConversationSession.builder().id(14L).build(),
+                message,
+                List.of(inbound(message))
+        );
+        ConversationDecision decision = ConversationDecision.builder()
+                .intents(List.of(Intent.TREATMENT_INFO))
+                .source(DecisionSource.AI)
+                .reply("El procedimiento se explica de forma general.")
+                .shouldBotReply(true)
+                .nextState(ConversationState.COLLECTING_DATA)
+                .build();
+
+        ConversationDecision result = policy.enrich(1L, context, decision);
+
+        assertThat(result.getReply()).isEqualTo("El procedimiento se explica de forma general.");
+        verify(promotionCatalog, never()).match(anyLong(), anyString());
+    }
+
+    @Test
+    void doesNotApplyGeneralInterestFallbackAfterSecondCustomerMessage() {
+        String message = "Quiero informacion sobre botox";
+        ConversationContext context = context(
+                ConversationSession.builder().id(15L).build(),
+                message,
+                List.of(inbound("Hola"), inbound("Quiero consultar"), inbound(message))
+        );
+        ConversationDecision decision = ConversationDecision.builder()
+                .intents(List.of(Intent.TREATMENT_INFO))
+                .source(DecisionSource.AI)
+                .reply("Te cuento sobre el tratamiento.")
+                .shouldBotReply(true)
+                .nextState(ConversationState.COLLECTING_DATA)
+                .build();
+
+        ConversationDecision result = policy.enrich(1L, context, decision);
+
+        assertThat(result.getReply()).isEqualTo("Te cuento sobre el tratamiento.");
+        verify(promotionCatalog, never()).match(anyLong(), anyString());
+    }
+
     private ConversationContext context(ConversationSession session, String message) {
+        return context(session, message, null);
+    }
+
+    private ConversationContext context(
+            ConversationSession session,
+            String message,
+            List<RecentConversationMessage> recentMessages
+    ) {
         return ConversationContext.builder()
                 .currentSession(session)
                 .currentMessage(ChatMessage.builder().message(message).build())
+                .recentMessages(recentMessages)
+                .build();
+    }
+
+    private RecentConversationMessage inbound(String content) {
+        return RecentConversationMessage.builder()
+                .direction(MessageDirection.INBOUND)
+                .content(content)
                 .build();
     }
 }

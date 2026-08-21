@@ -6,6 +6,7 @@ import com.beautybot.whatsappairesponseservice.conversation.decision.DecisionSou
 import com.beautybot.whatsappairesponseservice.conversation.reply.LeadCollectionReplyFactory;
 import com.beautybot.whatsappairesponseservice.conversation.state.ConversationState;
 import com.beautybot.whatsappairesponseservice.conversation.state.Intent;
+import com.beautybot.whatsappairesponseservice.conversation.state.MessageDirection;
 import com.beautybot.whatsappairesponseservice.conversation.state.RequiredField;
 import com.beautybot.whatsappairesponseservice.promotion.PromotionCatalog;
 import com.beautybot.whatsappairesponseservice.promotion.PromotionContent;
@@ -13,9 +14,11 @@ import com.beautybot.whatsappairesponseservice.promotion.PromotionDeliveryRegist
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 @Component
@@ -23,6 +26,40 @@ import java.util.Set;
 public class ConversationPromotionPolicy {
 
     private static final int MAX_COMPOSED_REPLY_LENGTH = 4000;
+    private static final int EARLY_CUSTOMER_MESSAGE_LIMIT = 2;
+    private static final List<String> GENERAL_INTEREST_PHRASES = List.of(
+            "quiero informacion",
+            "quisiera informacion",
+            "queria informacion",
+            "quiero info",
+            "quisiera info",
+            "quiero saber mas",
+            "quisiera saber mas",
+            "me gustaria saber mas",
+            "quiero averiguar",
+            "quisiera averiguar",
+            "queria averiguar",
+            "quiero consultar",
+            "quisiera consultar",
+            "me interesa",
+            "estoy interesado",
+            "estoy interesada",
+            "vi en redes",
+            "vi por instagram",
+            "vi en instagram",
+            "vi por facebook",
+            "vi en facebook"
+    );
+    private static final List<String> PROCEDURAL_QUESTION_PHRASES = List.of(
+            "que es",
+            "en que consiste",
+            "para que sirve",
+            "como funciona",
+            "como se realiza",
+            "como se hace",
+            "cuanto demora",
+            "cuanto dura"
+    );
     private static final Set<Intent> BLOCKING_INTENTS = Set.of(
             Intent.MEDICAL_QUESTION,
             Intent.HUMAN_REQUEST,
@@ -89,12 +126,42 @@ public class ConversationPromotionPolicy {
                 return selected;
             }
         }
+        if (isEarlyGeneralPromotionInterest(context)) {
+            return promotionCatalog.match(clinicId, context.getCurrentMessage().getMessage());
+        }
         if (decision.getSource() == DecisionSource.RULE_BASED
                 && decision.getIntents() != null
                 && decision.getIntents().contains(Intent.PRICE_QUESTION)) {
             return promotionCatalog.match(clinicId, context.getCurrentMessage().getMessage());
         }
         return List.of();
+    }
+
+    private boolean isEarlyGeneralPromotionInterest(ConversationContext context) {
+        if (context.getCurrentMessage() == null || !hasText(context.getCurrentMessage().getMessage())) {
+            return false;
+        }
+        long customerMessageCount = context.getRecentMessages() == null || context.getRecentMessages().isEmpty()
+                ? 1
+                : context.getRecentMessages().stream()
+                        .filter(message -> message != null && message.getDirection() == MessageDirection.INBOUND)
+                        .count();
+        if (customerMessageCount > EARLY_CUSTOMER_MESSAGE_LIMIT) {
+            return false;
+        }
+
+        String message = normalize(context.getCurrentMessage().getMessage());
+        boolean generalInterest = GENERAL_INTEREST_PHRASES.stream().anyMatch(message::contains);
+        boolean proceduralQuestion = PROCEDURAL_QUESTION_PHRASES.stream().anyMatch(message::contains);
+        return generalInterest && !proceduralQuestion;
+    }
+
+    private String normalize(String value) {
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 
     private ComposedPromotions composePromotionBodies(List<PromotionContent> matches) {

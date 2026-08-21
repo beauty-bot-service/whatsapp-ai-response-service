@@ -2,6 +2,7 @@ package com.beautybot.whatsappairesponseservice.application.decision;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.ClassPathResource;
 
 import java.nio.charset.StandardCharsets;
 
@@ -23,6 +24,20 @@ class AiDecisionPromptProviderTest {
         assertThatThrownBy(() -> provider("  \n"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("AI decision prompt must not be empty");
+    }
+
+    @Test
+    void productionPromptKeepsWarmConversationalStyle() {
+        AiDecisionPromptProvider provider = new AiDecisionPromptProvider(
+                new ClassPathResource("prompts/ai-decision-prompt.txt"));
+
+        assertThat(provider.instructions())
+                .contains("Habla con voz femenina")
+                .contains("Inclui por defecto un emoji")
+                .contains("🤗")
+                .contains("☺️")
+                .doesNotContain("no lo uses siempre")
+                .doesNotContain("Sin signos de exclamacion");
     }
 
     private AiDecisionPromptProvider provider(String content) {

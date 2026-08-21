@@ -70,7 +70,7 @@ class ConversationDecisionValidatorTest {
     }
 
     @Test
-    void forcesMedicalQuestionsToHumanEvenWhenAiTriesToContinue() {
+    void allowsBasicMedicalInformationWhenNoSensitiveSignalIsPresent() {
         ConversationSession session = ConversationSession.builder()
                 .id(1L)
                 .phoneNumber("5491112345678")
@@ -78,6 +78,9 @@ class ConversationDecisionValidatorTest {
                 .build();
         ConversationContext context = ConversationContext.builder()
                 .currentSession(session)
+                .currentMessage(ChatMessage.builder()
+                        .message("En que consiste el tratamiento?")
+                        .build())
                 .build();
         ConversationDecision decision = ConversationDecision.builder()
                 .intents(List.of(Intent.MEDICAL_QUESTION))
@@ -86,16 +89,15 @@ class ConversationDecisionValidatorTest {
                 .requiresHuman(false)
                 .shouldNotifyHuman(false)
                 .shouldBotReply(true)
-                .reply("Respuesta medica que no debe enviarse")
+                .reply("Es una explicacion general breve. Te interesa coordinar? 😊")
                 .build();
 
         ConversationDecision validated = validator.validateAndFix(decision, context);
 
-        assertThat(validated.getNextState()).isEqualTo(ConversationState.HUMAN_HANDOFF);
-        assertThat(validated.getRequiresHuman()).isTrue();
-        assertThat(validated.getShouldNotifyHuman()).isTrue();
-        assertThat(validated.getReply()).contains("profesional del equipo");
-        assertThat(validated.getReply()).doesNotContain("Respuesta medica");
+        assertThat(validated.getNextState()).isEqualTo(ConversationState.COLLECTING_DATA);
+        assertThat(validated.getRequiresHuman()).isFalse();
+        assertThat(validated.getShouldNotifyHuman()).isFalse();
+        assertThat(validated.getReply()).contains("explicacion general").contains("😊");
     }
 
     @Test

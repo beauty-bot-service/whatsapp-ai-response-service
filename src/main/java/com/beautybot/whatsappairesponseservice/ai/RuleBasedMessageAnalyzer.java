@@ -82,7 +82,8 @@ public class RuleBasedMessageAnalyzer implements MessageAnalyzer {
     );
 
     private static final List<String> TREATMENT_INFO_TERMS = List.of(
-            "que es", "de que se trata", "como funciona", "para que sirve", "en que consiste",
+            "que es", "de que se trata", "como funciona", "como se realiza", "como es el procedimiento",
+            "para que sirve", "en que consiste",
             "jeringa", "media jeringa", "jeringa completa", "completa", "marca", "marcas",
             "dura", "demora", "tiempo demora", "cuanto tiempo", "incluye", "retoque",
             "control", "procedimiento"

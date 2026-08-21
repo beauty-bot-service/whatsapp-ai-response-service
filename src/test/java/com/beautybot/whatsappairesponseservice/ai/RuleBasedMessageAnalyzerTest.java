@@ -113,6 +113,17 @@ class RuleBasedMessageAnalyzerTest {
     }
 
     @Test
+    void classifiesProcedureAndDurationQuestionAsGeneralInformation() {
+        ConversationSession session = ConversationSession.builder().build();
+
+        MessageAnalysis analysis = analyzer.analyze("Como se realiza el procedimiento y cuanto demora?", session);
+
+        assertThat(analysis.getIntents()).contains(Intent.TREATMENT_INFO);
+        assertThat(analysis.getIntents()).doesNotContain(Intent.MEDICAL_QUESTION);
+        assertThat(analysis.getMedicalQuestion()).isFalse();
+    }
+
+    @Test
     void keepsRiskQuestionClassifiedAsMedical() {
         ConversationSession session = ConversationSession.builder().build();
 

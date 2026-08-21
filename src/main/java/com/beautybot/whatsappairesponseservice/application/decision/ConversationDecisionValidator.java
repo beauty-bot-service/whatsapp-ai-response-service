@@ -101,7 +101,7 @@ public class ConversationDecisionValidator {
                 ? null
                 : context.getCurrentMessage().getMessage();
         boolean medicalIntent = decision.getIntents().contains(Intent.MEDICAL_QUESTION);
-        if (!medicalIntent && !MedicalQuestionClassifier.requiresHuman(currentMessage)) {
+        if (!MedicalQuestionClassifier.requiresHuman(currentMessage)) {
             return;
         }
         if (!medicalIntent) {
@@ -311,23 +311,6 @@ public class ConversationDecisionValidator {
                 .replace("\u00BF", "")
                 .replace("\u00A1", "")
                 .replace("!", "");
-        normalized = removeEmojiLikeCharacters(normalized);
         return normalized.replaceAll("\\s{2,}", " ").trim();
-    }
-
-    private String removeEmojiLikeCharacters(String value) {
-        StringBuilder cleaned = new StringBuilder();
-        value.codePoints()
-                .filter(codePoint -> !isEmojiLike(codePoint))
-                .forEach(cleaned::appendCodePoint);
-        return cleaned.toString();
-    }
-
-    private boolean isEmojiLike(int codePoint) {
-        return (codePoint >= 0x1F300 && codePoint <= 0x1FAFF)
-                || (codePoint >= 0x2600 && codePoint <= 0x27BF)
-                || (codePoint >= 0x1F1E6 && codePoint <= 0x1F1FF)
-                || codePoint == 0x200D
-                || codePoint == 0xFE0F;
     }
 }

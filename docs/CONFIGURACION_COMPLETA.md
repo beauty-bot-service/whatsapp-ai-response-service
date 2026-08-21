@@ -42,30 +42,17 @@ Variables relacionadas:
 - `BEAUTY_BOT_AI_ENABLED`
 - `BEAUTY_BOT_AI_DECISION_ENABLED`
 - `BEAUTY_BOT_AI_DECISION_FALLBACK_ENABLED`
-- `BEAUTY_BOT_AI_DECISION_PROMPT_ID`
+- `BEAUTY_BOT_AI_DECISION_PROMPT_RESOURCE` (opcional)
 
-### 2.1 Prompt templates (mandar reglas una sola vez)
+### 2.1 Prompt local y cache
 
-Si la decision por IA esta habilitada, el Prompt Template de OpenAI es obligatorio. Ahi viven las reglas, el formato JSON, estados e intents permitidos.
+Las reglas, el formato JSON, los estados y los intents viven en `src/main/resources/prompts/ai-decision-prompt.txt`. El servicio carga el archivo una sola vez durante el arranque y no depende de Prompt Templates remotos.
 
-1. Crear prompt template para decision conversacional.
-2. Usar como referencia lista para copiar:
-   - [docs/prompts/AI_DECISION_PROMPT_TEMPLATE.md](prompts/AI_DECISION_PROMPT_TEMPLATE.md)
-3. Configurar ID en variables de entorno:
+No hace falta configurar un ID ni una version de prompt en OpenAI. Para usar otro recurso empaquetado, opcionalmente configurar:
 
 ```powershell
-$env:BEAUTY_BOT_AI_DECISION_PROMPT_ID="pmpt_xxx"
+$env:BEAUTY_BOT_AI_DECISION_PROMPT_RESOURCE="classpath:prompts/ai-decision-prompt.txt"
 ```
-
-Opcional version fija:
-
-```powershell
-$env:BEAUTY_BOT_AI_DECISION_PROMPT_VERSION="v4"
-```
-
-Variables que el backend inyecta en cada request:
-
-- Prompt de decision: `{{conversation_context}}`
 
 Opcional para cache extendida:
 
@@ -73,7 +60,7 @@ Opcional para cache extendida:
 $env:BEAUTY_BOT_AI_PROMPT_CACHE_RETENTION="24h"
 ```
 
-Si no seteas `BEAUTY_BOT_AI_DECISION_PROMPT_ID` y la decision por IA esta activa, el backend reporta error de configuracion de IA y no usa fallback rule-based para ocultarlo.
+El backend calcula la clave compartida a partir del contenido del prompt. Esto maximiza la reutilizacion del prefijo estatico entre conversaciones sin mezclar contextos y renueva la clave automaticamente cuando cambian las reglas. El primer pedido y los posteriores a una expiracion pueden no encontrar cache.
 
 El payload de decision se reduce a contexto dinamico: clinica, capacidades activas, mensaje actual, historial, estado de sesion y disponibilidad calculada.
 

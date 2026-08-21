@@ -410,8 +410,7 @@ Configuraciones de IA:
 | `BEAUTY_BOT_AI_DECISION_FALLBACK_ENABLED` | Si OpenAI falla temporalmente, permite usar el flujo local por reglas. |
 | `BEAUTY_BOT_AI_MODEL` | Modelo de OpenAI configurado para la decision conversacional. |
 | `BEAUTY_BOT_AI_TIMEOUT_SECONDS` | Tiempo maximo de espera para llamadas a OpenAI. |
-| `BEAUTY_BOT_AI_DECISION_PROMPT_ID` | ID del Prompt Template aprobado. |
-| `BEAUTY_BOT_AI_DECISION_PROMPT_VERSION` | Version fija del prompt, si se quiere controlar cambios. |
+| `BEAUTY_BOT_AI_DECISION_PROMPT_RESOURCE` | Recurso local del prompt; normalmente no hace falta configurarlo. |
 | `BEAUTY_BOT_AI_PROMPT_CACHE_RETENTION` | Configuracion opcional de cache de prompt. |
 
 Configuraciones de WhatsApp:

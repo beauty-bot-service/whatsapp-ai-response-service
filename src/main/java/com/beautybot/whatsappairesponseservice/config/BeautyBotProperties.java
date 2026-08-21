@@ -172,11 +172,6 @@ public class BeautyBotProperties {
          */
         private String promptCacheRetention;
 
-        /**
-         * Prompt template para decision conversacional (Responses API prompt object).
-         */
-        private PromptTemplate decisionPrompt = new PromptTemplate();
-
         @Data
         public static class Decision {
             /**
@@ -190,22 +185,6 @@ public class BeautyBotProperties {
             private boolean fallbackEnabled = true;
         }
 
-        @Data
-        public static class PromptTemplate {
-            /**
-             * ID del prompt template (pmpt_xxx).
-             */
-            private String id;
-
-            /**
-             * Version opcional del prompt template.
-             */
-            private String version;
-
-            public boolean isConfigured() {
-                return id != null && !id.isBlank();
-            }
-        }
     }
 
     @Data

@@ -76,9 +76,7 @@ beauty-bot:
     decision:
       enabled: ${BEAUTY_BOT_AI_DECISION_ENABLED:true}
       fallback-enabled: ${BEAUTY_BOT_AI_DECISION_FALLBACK_ENABLED:true}
-    decision-prompt:
-      id: ${BEAUTY_BOT_AI_DECISION_PROMPT_ID:pmpt_6a02f47c00c8819680b96adab9567fc609c9ad968e62966b}
-      version: ${BEAUTY_BOT_AI_DECISION_PROMPT_VERSION:}
+    decision-prompt-resource: ${BEAUTY_BOT_AI_DECISION_PROMPT_RESOURCE:classpath:prompts/ai-decision-prompt.txt}
   conversation:
     collecting-reuse-hours: ${BEAUTY_BOT_CONVERSATION_COLLECTING_REUSE_HOURS:24}
     ready-for-human-reuse-hours: ${BEAUTY_BOT_CONVERSATION_READY_FOR_HUMAN_REUSE_HOURS:168}

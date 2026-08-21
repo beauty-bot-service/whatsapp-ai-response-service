@@ -27,6 +27,7 @@ import java.util.Map;
 public class AiConversationDecisionService implements ConversationDecisionService {
 
     private final BeautyBotProperties properties;
+    private final AiDecisionPromptProvider promptProvider;
     private final ObjectMapper objectMapper;
     private final OpenAiResponseParser responseParser;
     private final RestClientFactory restClientFactory;
@@ -39,10 +40,6 @@ public class AiConversationDecisionService implements ConversationDecisionServic
         if (!ai.isEnabled() || ai.getApiKey() == null || ai.getApiKey().isBlank()) {
             throw new AppException(ResponseCode.AI_DECISION_CONFIGURATION_ERROR);
         }
-        if (!isPromptTemplateConfigured()) {
-            throw new AppException(ResponseCode.AI_DECISION_CONFIGURATION_ERROR);
-        }
-
         try {
             JsonNode response = restClientFactory.openAiClient(ai).post()
                     .uri("/responses")
@@ -70,40 +67,19 @@ public class AiConversationDecisionService implements ConversationDecisionServic
         }
     }
 
-    private Map<String, Object> buildRequest(ConversationContext context, String model) throws JsonProcessingException {
+    Map<String, Object> buildRequest(ConversationContext context, String model) throws JsonProcessingException {
         String contextualPayload = buildUserInput(context);
         Map<String, Object> request = new LinkedHashMap<>();
         request.put("model", model);
         request.put("store", false);
-        applyCacheSettings(request, context, "decision");
-        request.put("prompt", buildPromptObject(contextualPayload));
+        applyCacheSettings(request, "decision");
+        request.put("instructions", promptProvider.instructions());
+        request.put("input", contextualPayload);
         return request;
     }
 
-    private boolean isPromptTemplateConfigured() {
-        BeautyBotProperties.Ai ai = properties.getAi();
-        return ai != null && ai.getDecisionPrompt() != null && ai.getDecisionPrompt().isConfigured();
-    }
-
-    private Map<String, Object> buildPromptObject(String contextualPayload) {
-        BeautyBotProperties.Ai.PromptTemplate promptTemplate = properties.getAi().getDecisionPrompt();
-        Map<String, Object> prompt = new LinkedHashMap<>();
-        prompt.put("id", promptTemplate.getId().trim());
-        if (promptTemplate.getVersion() != null && !promptTemplate.getVersion().isBlank()) {
-            prompt.put("version", promptTemplate.getVersion().trim());
-        }
-        prompt.put("variables", Map.of("conversation_context", contextualPayload));
-        return prompt;
-    }
-
-    private void applyCacheSettings(Map<String, Object> request, ConversationContext context, String flow) {
-        String phoneNumber = context == null || context.getCurrentSession() == null
-                ? null
-                : context.getCurrentSession().getPhoneNumber();
-        String normalizedPhone = normalizePhone(phoneNumber);
-        if (hasText(normalizedPhone)) {
-            request.put("prompt_cache_key", flow + ":" + normalizedPhone);
-        }
+    void applyCacheSettings(Map<String, Object> request, String flow) {
+        request.put("prompt_cache_key", flow + ":" + promptProvider.fingerprint());
 
         String retention = properties.getAi().getPromptCacheRetention();
         if (hasText(retention)) {
@@ -111,15 +87,7 @@ public class AiConversationDecisionService implements ConversationDecisionServic
         }
     }
 
-    private String normalizePhone(String value) {
-        if (value == null) {
-            return null;
-        }
-        String digits = value.replaceAll("[^0-9]", "");
-        return digits.isBlank() ? null : digits;
-    }
-
-    private String buildUserInput(ConversationContext context) throws JsonProcessingException {
+    String buildUserInput(ConversationContext context) throws JsonProcessingException {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("clinic", context.getClinic());
         payload.put("botCapabilities", context.getBotCapabilities());
@@ -128,6 +96,8 @@ public class AiConversationDecisionService implements ConversationDecisionServic
         payload.put("lastUserMessage", context.getCurrentMessage() == null ? null : context.getCurrentMessage().getMessage());
         payload.put("lastBotMessage", context.getLastBotMessage());
         payload.put("recentMessages", context.getRecentMessages());
+        payload.put("availabilitySuggestions", context.getAvailabilitySuggestions());
+        payload.put("availabilityLookupFailed", context.isAvailabilityLookupFailed());
         payload.put("activePromotions", context.getActivePromotions());
         return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(payload);
     }

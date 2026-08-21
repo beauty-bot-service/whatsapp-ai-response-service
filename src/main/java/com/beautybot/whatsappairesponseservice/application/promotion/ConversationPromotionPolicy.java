@@ -2,6 +2,7 @@ package com.beautybot.whatsappairesponseservice.application.promotion;
 
 import com.beautybot.whatsappairesponseservice.conversation.decision.ConversationContext;
 import com.beautybot.whatsappairesponseservice.conversation.decision.ConversationDecision;
+import com.beautybot.whatsappairesponseservice.conversation.decision.DecisionSource;
 import com.beautybot.whatsappairesponseservice.conversation.reply.LeadCollectionReplyFactory;
 import com.beautybot.whatsappairesponseservice.conversation.state.ConversationState;
 import com.beautybot.whatsappairesponseservice.conversation.state.Intent;
@@ -88,7 +89,12 @@ public class ConversationPromotionPolicy {
                 return selected;
             }
         }
-        return promotionCatalog.match(clinicId, context.getCurrentMessage().getMessage());
+        if (decision.getSource() == DecisionSource.RULE_BASED
+                && decision.getIntents() != null
+                && decision.getIntents().contains(Intent.PRICE_QUESTION)) {
+            return promotionCatalog.match(clinicId, context.getCurrentMessage().getMessage());
+        }
+        return List.of();
     }
 
     private ComposedPromotions composePromotionBodies(List<PromotionContent> matches) {

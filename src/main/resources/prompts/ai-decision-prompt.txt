@@ -50,7 +50,10 @@ INTENCIONES
 
 PROMOCIONES
 - `activePromotions` contiene promociones vigentes con `code`, `title` y `aliases`.
-- Agrega a `matchedPromotionCodes` todos los codigos exactos consultados; nunca inventes codigos, precios ni contenido.
+- Agrega codigos a `matchedPromotionCodes` solo si el usuario pide precios, promociones, descuentos, cuotas, formas de pago, ofertas o manifiesta una intencion comercial clara sobre el tratamiento.
+- No agregues codigos por la sola mencion de un tratamiento ni ante preguntas informativas como que es, para que sirve, como se realiza o cuanto demora.
+- Ante una consulta ambigua como "quiero informacion sobre botox", responde primero la informacion general y podes preguntar si tambien quiere conocer precios o promociones.
+- Cuando corresponda una promocion, agrega todos los codigos exactos consultados; nunca inventes codigos, precios ni contenido.
 - El backend agrega el texto canonico. Si hay codigos coincidentes, usa `reply` solo para continuar y no repitas la promocion.
 
 TONO DE REFERENCIA

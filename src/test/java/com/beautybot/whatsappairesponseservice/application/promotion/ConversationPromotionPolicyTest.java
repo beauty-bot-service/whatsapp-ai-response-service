@@ -2,6 +2,7 @@ package com.beautybot.whatsappairesponseservice.application.promotion;
 
 import com.beautybot.whatsappairesponseservice.conversation.decision.ConversationContext;
 import com.beautybot.whatsappairesponseservice.conversation.decision.ConversationDecision;
+import com.beautybot.whatsappairesponseservice.conversation.decision.DecisionSource;
 import com.beautybot.whatsappairesponseservice.conversation.model.ChatMessage;
 import com.beautybot.whatsappairesponseservice.conversation.model.ConversationSession;
 import com.beautybot.whatsappairesponseservice.conversation.reply.LeadCollectionReplyFactory;
@@ -27,6 +28,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 
 @ExtendWith(MockitoExtension.class)
 class ConversationPromotionPolicyTest {
@@ -57,6 +59,7 @@ class ConversationPromotionPolicyTest {
         ConversationContext context = context(session, "Quiero botox y rinomodelado");
         ConversationDecision decision = ConversationDecision.builder()
                 .intents(List.of(Intent.PRICE_QUESTION))
+                .source(DecisionSource.RULE_BASED)
                 .nextState(ConversationState.COLLECTING_DATA)
                 .nextWaitingForField(RequiredField.NAME)
                 .shouldBotReply(true)
@@ -86,6 +89,7 @@ class ConversationPromotionPolicyTest {
         ConversationContext context = context(ConversationSession.builder().id(1L).build(), "Lo que vi en redes");
         ConversationDecision decision = ConversationDecision.builder()
                 .intents(List.of(Intent.PRICE_QUESTION))
+                .source(DecisionSource.AI)
                 .matchedPromotionCodes(List.of("botox"))
                 .nextState(ConversationState.COLLECTING_DATA)
                 .shouldBotReply(true)
@@ -104,6 +108,7 @@ class ConversationPromotionPolicyTest {
         ConversationContext context = context(ConversationSession.builder().id(1L).build(), "Botox tiene riesgos?");
         ConversationDecision decision = ConversationDecision.builder()
                 .intents(List.of(Intent.MEDICAL_QUESTION))
+                .source(DecisionSource.AI)
                 .reply("Te derivo con una profesional.")
                 .build();
 
@@ -118,6 +123,7 @@ class ConversationPromotionPolicyTest {
         ConversationContext context = context(ConversationSession.builder().id(7L).build(), "Cual es el precio del botox?");
         ConversationDecision decision = ConversationDecision.builder()
                 .intents(List.of(Intent.PRICE_QUESTION))
+                .source(DecisionSource.RULE_BASED)
                 .reply("Una asesora puede confirmarte el precio actualizado.")
                 .shouldBotReply(true)
                 .nextState(ConversationState.COLLECTING_DATA)
@@ -139,7 +145,8 @@ class ConversationPromotionPolicyTest {
     void sendsOnlyPromotionsNotPreviouslyDelivered() {
         ConversationContext context = context(ConversationSession.builder().id(9L).build(), "Botox y rinomodelado");
         ConversationDecision decision = ConversationDecision.builder()
-                .intents(List.of(Intent.TREATMENT_INFO))
+                .intents(List.of(Intent.PRICE_QUESTION))
+                .source(DecisionSource.RULE_BASED)
                 .shouldBotReply(true)
                 .nextState(ConversationState.COLLECTING_DATA)
                 .build();
@@ -154,6 +161,29 @@ class ConversationPromotionPolicyTest {
         assertThat(result.getReply()).isEqualTo("PROMO RINO");
         assertThat(result.getMatchedPromotionCodes()).containsExactly("rinomodelado");
         verify(promotionDeliveryRegistry).recordDelivered(9L, List.of(rinomodelado));
+    }
+
+    @Test
+    void doesNotMatchPromotionByTreatmentNameForAiInformationQuestion() {
+        ConversationContext context = context(
+                ConversationSession.builder().id(12L).build(),
+                "En que consiste el botox y cuanto demora?"
+        );
+        ConversationDecision decision = ConversationDecision.builder()
+                .intents(List.of(Intent.TREATMENT_INFO))
+                .source(DecisionSource.AI)
+                .reply("Es un procedimiento breve que se evalua con el profesional.")
+                .shouldBotReply(true)
+                .nextState(ConversationState.COLLECTING_DATA)
+                .build();
+
+        ConversationDecision result = policy.enrich(1L, context, decision);
+
+        assertThat(result.getReply()).isEqualTo(
+                "Es un procedimiento breve que se evalua con el profesional."
+        );
+        assertThat(result.getMatchedPromotionCodes()).isEmpty();
+        verify(promotionCatalog, never()).match(anyLong(), anyString());
     }
 
     private ConversationContext context(ConversationSession session, String message) {
